@@ -26,7 +26,7 @@ export default function TickerPage() {
   const [screen, setScreen] = useState<number>(() =>
     readNumberParam("screen", 1, 1, 6),
   );
-  const [speed, setSpeed] = useState<number>(() => readNumberParam("speed", 80, 20, 220));
+  const [speed, setSpeed] = useState<number>(() => readNumberParam("speed", 20, 5, 100));
   const [paused, setPaused] = useState<boolean>(false);
   const [tile, setTile] = useState<boolean>(() =>
     readBoolParam("tile", readNumberParam("screens", 1, 1, 6) > 1),
@@ -56,9 +56,9 @@ export default function TickerPage() {
       } else if (e.key.toLowerCase() === "f") {
         toggleFullscreen();
       } else if (e.key === "+" || e.key === "=") {
-        setSpeed((s) => Math.min(220, s + 10));
+        setSpeed((s) => Math.min(100, s + 5));
       } else if (e.key === "-" || e.key === "_") {
-        setSpeed((s) => Math.max(20, s - 10));
+        setSpeed((s) => Math.max(5, s - 5));
       }
     };
     window.addEventListener("keydown", onKey);

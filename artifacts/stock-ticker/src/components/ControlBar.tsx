@@ -37,9 +37,9 @@ export function ControlBar({
         <Gauge className="ic muted" />
         <input
           type="range"
-          min={20}
-          max={220}
-          step={10}
+          min={5}
+          max={100}
+          step={5}
           value={speed}
           onChange={(e) => onSpeedChange(Number(e.target.value))}
           aria-label="Scroll speed"
