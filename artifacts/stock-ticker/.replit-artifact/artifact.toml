@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Vertical Stock Ticker"
+version = "1.0.0"
+id = "artifacts/stock-ticker"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21397
+
+[services.development]
+run = "pnpm --filter @workspace/stock-ticker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/stock-ticker", "run", "build" ]
+publicDir = "artifacts/stock-ticker/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21397"
+BASE_PATH = "/"
