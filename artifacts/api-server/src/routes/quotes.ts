@@ -100,7 +100,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
-router.get("/quotes", async (req, res) => {
+router.get("/quotes", async (req: any, res: any) => {
   const raw = String(req.query["symbols"] ?? "").trim();
   if (!raw) {
     res.status(400).json({ error: "Missing 'symbols' query param" });
