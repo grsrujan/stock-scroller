@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MarketHeader } from "@/components/MarketHeader";
 import { Ticker } from "@/components/Ticker";
 import { ControlBar } from "@/components/ControlBar";
+import { SearchOverlay } from "@/components/SearchOverlay";
 
 function readNumberParam(name: string, fallback: number, min: number, max: number): number {
   if (typeof window === "undefined") return fallback;
@@ -32,6 +33,8 @@ export default function TickerPage() {
     readBoolParam("tile", readNumberParam("screens", 1, 1, 6) > 1),
   );
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [highlightSymbol, setHighlightSymbol] = useState<string | null>(null);
 
   useEffect(() => {
     if (screen > screens) setScreen(screens);
@@ -50,20 +53,27 @@ export default function TickerPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (searchOpen) return;
       if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         setPaused((p) => !p);
+      } else if (e.key === "/") {
+        e.preventDefault();
+        setSearchOpen(true);
       } else if (e.key.toLowerCase() === "f") {
         toggleFullscreen();
       } else if (e.key === "+" || e.key === "=") {
         setSpeed((s) => Math.min(80, s + 5));
       } else if (e.key === "-" || e.key === "_") {
         setSpeed((s) => Math.max(5, s - 5));
+      } else if (e.key === "Escape" && highlightSymbol) {
+        setHighlightSymbol(null);
+        setPaused(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [searchOpen, highlightSymbol]);
 
   const toggleFullscreen = () => {
     const el = wrapRef.current;
@@ -94,6 +104,17 @@ export default function TickerPage() {
         onFullscreen={toggleFullscreen}
         tile={tile}
         onToggleTile={() => setTile(!tile)}
+        onSearch={() => setSearchOpen(true)}
+      />
+
+      <SearchOverlay
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSelect={(sym) => {
+          setSearchOpen(false);
+          setHighlightSymbol(sym);
+          setPaused(true);
+        }}
       />
 
       <main className="ticker-main">
@@ -111,6 +132,7 @@ export default function TickerPage() {
                     screen={n}
                     speed={speed}
                     paused={paused}
+                    highlightSymbol={highlightSymbol}
                   />
                   <div className="fade-top" aria-hidden="true" />
                   <div className="fade-bottom" aria-hidden="true" />
@@ -125,6 +147,7 @@ export default function TickerPage() {
               screen={screen}
               speed={speed}
               paused={paused}
+              highlightSymbol={highlightSymbol}
             />
             <div className="fade-top" aria-hidden="true" />
             <div className="fade-bottom" aria-hidden="true" />

@@ -1,4 +1,4 @@
-import { Pause, Play, Maximize2, Gauge, Columns3, Square } from "lucide-react";
+import { Pause, Play, Maximize2, Gauge, Columns3, Square, Search } from "lucide-react";
 
 type Props = {
   paused: boolean;
@@ -12,6 +12,7 @@ type Props = {
   onFullscreen: () => void;
   tile: boolean;
   onToggleTile: () => void;
+  onSearch: () => void;
 };
 
 export function ControlBar({
@@ -26,11 +27,16 @@ export function ControlBar({
   onFullscreen,
   tile,
   onToggleTile,
+  onSearch,
 }: Props) {
   return (
     <div className="control-bar">
       <button className="ctrl-btn" onClick={onTogglePause} aria-label="Play/Pause">
         {paused ? <Play className="ic" /> : <Pause className="ic" />}
+      </button>
+
+      <button className="ctrl-btn" onClick={onSearch} aria-label="Search" title="Search (/)">
+        <Search className="ic" />
       </button>
 
       <div className="ctrl-group">

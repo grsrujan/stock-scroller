@@ -113,6 +113,7 @@ type TickerProps = {
   screen: number;
   speed: number;
   paused: boolean;
+  highlightSymbol?: string | null;
 };
 
 const SECTOR_ORDER = [
@@ -138,7 +139,7 @@ const STOCKS_BY_SECTOR: Stock[] = [...TOP_100_STOCKS].sort((a, b) => {
   return a.symbol.localeCompare(b.symbol);
 });
 
-export function Ticker({ screens, screen, speed, paused }: TickerProps) {
+export function Ticker({ screens, screen, speed, paused, highlightSymbol }: TickerProps) {
   const slice = useMemo<Stock[]>(() => {
     if (screens <= 1) return STOCKS_BY_SECTOR;
     const total = STOCKS_BY_SECTOR.length;
@@ -177,7 +178,10 @@ export function Ticker({ screens, screen, speed, paused }: TickerProps) {
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
+  const tickerInnerRef = useRef<HTMLDivElement | null>(null);
   const [duration, setDuration] = useState<number>(60);
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const effectivePaused = paused || hoverPaused;
 
   useEffect(() => {
     const measure = () => {
@@ -196,27 +200,63 @@ export function Ticker({ screens, screen, speed, paused }: TickerProps) {
     };
   }, [speed, quotes.length]);
 
+  // Jump to highlighted symbol
+  useEffect(() => {
+    if (!highlightSymbol) {
+      const el = tickerInnerRef.current;
+      if (el) {
+        el.style.animation = '';
+        el.style.transform = '';
+        el.style.transition = '';
+      }
+      return;
+    }
+    const el = tickerInnerRef.current;
+    const track = trackRef.current;
+    if (!el || !track) return;
+
+    const row = el.querySelector(`[data-symbol="${highlightSymbol}"]`) as HTMLElement;
+    if (!row) return;
+
+    const computed = getComputedStyle(el);
+    const currentTransform = computed.transform;
+
+    el.style.animation = 'none';
+    el.style.transform = currentTransform;
+    void el.offsetHeight;
+
+    const targetY = Math.min(0, -(row.offsetTop - track.clientHeight * 0.15));
+    el.style.transition = 'transform 0.5s ease-out';
+    el.style.transform = `translate3d(0, ${targetY}px, 0)`;
+  }, [highlightSymbol]);
+
   return (
-    <div className="ticker-track" ref={trackRef}>
+    <div
+      className="ticker-track"
+      ref={trackRef}
+      onMouseEnter={() => setHoverPaused(true)}
+      onMouseLeave={() => setHoverPaused(false)}
+    >
       <div
+        ref={tickerInnerRef}
         className="ticker-inner"
         style={{
           animationDuration: `${duration}s`,
-          animationPlayState: paused ? "paused" : "running",
+          animationPlayState: effectivePaused ? "paused" : "running",
         }}
       >
         <div ref={innerRef}>
-          {renderRows(quotes, "")}
+          {renderRows(quotes, "", highlightSymbol)}
         </div>
         <div aria-hidden="true">
-          {renderRows(quotes, "dup-")}
+          {renderRows(quotes, "dup-", highlightSymbol)}
         </div>
       </div>
     </div>
   );
 }
 
-function renderRows(quotes: LiveQuote[], keyPrefix: string) {
+function renderRows(quotes: LiveQuote[], keyPrefix: string, highlightSymbol?: string | null) {
   const out: ReactNode[] = [];
   let lastSector = "";
   for (const q of quotes) {
@@ -237,12 +277,18 @@ function renderRows(quotes: LiveQuote[], keyPrefix: string) {
       );
       lastSector = q.sector;
     }
-    out.push(<Row key={`${keyPrefix}${q.symbol}`} quote={q} />);
+    out.push(
+      <Row
+        key={`${keyPrefix}${q.symbol}`}
+        quote={q}
+        highlighted={q.symbol === highlightSymbol}
+      />,
+    );
   }
   return out;
 }
 
-function Row({ quote }: { quote: LiveQuote }) {
+function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }) {
   const up = quote.changePct > 0.0001;
   const down = quote.changePct < -0.0001;
   const color = up ? "text-up" : down ? "text-down" : "text-muted-foreground";
@@ -277,7 +323,8 @@ function Row({ quote }: { quote: LiveQuote }) {
 
   return (
     <div
-      className={`ticker-row ${bg} ${nearLow ? "near-low" : ""} ${nearHigh ? "near-high" : ""}`}
+      data-symbol={quote.symbol}
+      className={`ticker-row ${bg} ${nearLow ? "near-low" : ""} ${nearHigh ? "near-high" : ""} ${highlighted ? "highlighted" : ""}`}
       style={{ borderLeft: `4px solid ${sc}` }}
     >
       <div className="row-left">
