@@ -38,7 +38,7 @@ export function ControlBar({
         <input
           type="range"
           min={5}
-          max={100}
+          max={80}
           step={5}
           value={speed}
           onChange={(e) => onSpeedChange(Number(e.target.value))}
