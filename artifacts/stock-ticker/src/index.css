@@ -69,7 +69,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: clamp(4px, 0.5vh, 8px) clamp(8px, 1vw, 16px);
+  padding: 3px clamp(8px, 1vw, 14px);
   border-bottom: 1px solid var(--color-border);
   background: linear-gradient(180deg, rgba(15, 20, 34, 0.85), rgba(11, 15, 23, 0.6));
   backdrop-filter: blur(8px);
@@ -78,85 +78,78 @@ body {
 
 @media (max-width: 480px) {
   .market-header {
-    padding: 4px 8px;
+    padding: 2px 6px;
   }
   .brand-sub,
   .date {
     display: none;
   }
-  .brand {
-    gap: 2px;
-  }
   .brand-name {
-    font-size: 16px;
-    letter-spacing: 0.12em;
-  }
-  .time {
-    font-size: 18px;
-  }
-  .status {
-    font-size: 9px;
-    padding: 2px 6px;
+    font-size: 12px;
     letter-spacing: 0.1em;
   }
-  .brand-meta {
-    gap: 6px;
+  .time {
+    font-size: 14px;
+  }
+  .status {
+    font-size: 8px;
+    padding: 1px 5px;
   }
 }
 
 .brand {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
 .brand-mark {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .brand-dot {
-  width: 14px;
-  height: 14px;
+  width: 8px;
+  height: 8px;
   background: var(--color-accent);
   border-radius: 999px;
-  box-shadow: 0 0 18px rgba(255, 203, 58, 0.6);
+  box-shadow: 0 0 10px rgba(255, 203, 58, 0.6);
   animation: pulse 1.6s infinite ease-in-out;
 }
 
 .brand-name {
   font-family: var(--font-mono);
   font-weight: 800;
-  font-size: clamp(16px, 2vw, 24px);
-  letter-spacing: 0.18em;
+  font-size: clamp(12px, 1.4vw, 16px);
+  letter-spacing: 0.14em;
   color: var(--color-accent);
 }
 
 .brand-sub {
   font-family: var(--font-mono);
-  font-size: clamp(10px, 1.1vw, 14px);
-  letter-spacing: 0.4em;
+  font-size: clamp(9px, 0.9vw, 11px);
+  letter-spacing: 0.3em;
   color: var(--color-muted-foreground);
   border-left: 1px solid var(--color-border);
-  padding-left: 12px;
+  padding-left: 8px;
 }
 
 .brand-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   font-family: var(--font-mono);
-  font-size: clamp(10px, 1vw, 13px);
-  letter-spacing: 0.15em;
-  padding: 4px 10px;
+  font-size: clamp(8px, 0.8vw, 10px);
+  letter-spacing: 0.12em;
+  padding: 2px 7px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
 }
@@ -172,19 +165,19 @@ body {
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
   border-radius: 999px;
   background: currentColor;
-  box-shadow: 0 0 12px currentColor;
+  box-shadow: 0 0 8px currentColor;
 }
 
 .screen-pill {
   font-family: var(--font-mono);
-  font-size: clamp(10px, 1vw, 13px);
-  letter-spacing: 0.18em;
+  font-size: clamp(8px, 0.8vw, 10px);
+  letter-spacing: 0.14em;
   color: var(--color-fg);
-  padding: 4px 10px;
+  padding: 2px 7px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: var(--color-panel-2);
@@ -192,13 +185,16 @@ body {
 
 .clock {
   text-align: right;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .time {
   font-family: var(--font-mono);
-  font-size: clamp(20px, 3vw, 42px);
+  font-size: clamp(14px, 1.8vw, 22px);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   line-height: 1;
   color: var(--color-fg);
   font-variant-numeric: tabular-nums;
@@ -206,10 +202,9 @@ body {
 
 .date {
   font-family: var(--font-mono);
-  font-size: clamp(11px, 1.1vw, 14px);
-  letter-spacing: 0.25em;
+  font-size: clamp(9px, 0.9vw, 11px);
+  letter-spacing: 0.18em;
   color: var(--color-muted-foreground);
-  margin-top: 6px;
   text-transform: uppercase;
 }
 
@@ -584,15 +579,15 @@ body {
 .ctrl-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
+  gap: 4px;
+  padding: 2px 7px;
   background: var(--color-panel-2);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 4px;
   color: var(--color-fg);
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  letter-spacing: 0.08em;
   cursor: pointer;
   transition: all 150ms ease;
 }
@@ -634,8 +629,8 @@ body {
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px clamp(8px, 1vw, 16px);
+  gap: 10px;
+  padding: 3px clamp(8px, 1vw, 14px);
   border-bottom: 1px solid var(--color-border);
   background: rgba(11, 15, 23, 0.7);
   backdrop-filter: blur(6px);
@@ -646,9 +641,9 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
   border: 1px solid var(--color-border);
   background: var(--color-panel-2);
   color: var(--color-fg);
@@ -660,37 +655,37 @@ body {
   color: var(--color-accent);
 }
 .ctrl-btn .ic {
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
 }
 
 .ctrl-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .ctrl-label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  letter-spacing: 0.1em;
   color: var(--color-muted-foreground);
   text-transform: uppercase;
 }
 
 .ctrl-value {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 9px;
+  letter-spacing: 0.06em;
   color: var(--color-muted-foreground);
-  min-width: 6ch;
+  min-width: 5ch;
 }
 
 .control-bar select {
   font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 6px;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
   border: 1px solid var(--color-border);
   background: var(--color-panel-2);
   color: var(--color-fg);
@@ -698,7 +693,8 @@ body {
 }
 
 .control-bar input[type="range"] {
-  width: 80px;
+  width: 60px;
+  height: 12px;
   accent-color: var(--color-accent);
 }
 
