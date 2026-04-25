@@ -13,6 +13,7 @@ type CachedQuote = {
   fiftyTwoLow: number | null;
   dividendYieldPct: number | null;
   marketCap: number | null;
+  peRatio: number | null;
   revenue: number | null;
   profit: number | null;
   marketState: string | null;
@@ -158,6 +159,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           fiftyTwoLow: null,
           dividendYieldPct: null,
           marketCap: null,
+          peRatio: null,
           revenue: fin.revenue,
           profit: fin.profit,
           marketState: null,
@@ -188,6 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         fiftyTwoLow: (q.fiftyTwoWeekLow as number | undefined) ?? null,
         dividendYieldPct,
         marketCap: (q.marketCap as number | undefined) ?? null,
+        peRatio: (q.trailingPE as number | undefined) ?? null,
         revenue: fin.revenue,
         profit: fin.profit,
         marketState: (q.marketState as string | undefined) ?? null,

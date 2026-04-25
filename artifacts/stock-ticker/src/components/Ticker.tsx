@@ -14,6 +14,7 @@ type LiveQuote = {
   fiftyTwoLow: number | null;
   dividendYieldPct: number | null;
   marketCap: number | null;
+  peRatio: number | null;
   revenue: number | null;
   profit: number | null;
   flash: "up" | "down" | "none";
@@ -32,6 +33,7 @@ const SECTOR_COLORS: Record<string, string> = {
   "Materials": "#c39bff",
   "Real Estate": "#ff9bb3",
   "Utilities": "#6ec1e4",
+  "Custom": "#e0e0e0",
 };
 
 function sectorColor(sector: string): string {
@@ -57,6 +59,7 @@ function placeholderQuotes(stocks: Stock[]): LiveQuote[] {
     fiftyTwoLow: null,
     dividendYieldPct: null,
     marketCap: null,
+    peRatio: null,
     revenue: null,
     profit: null,
     flash: "none",
@@ -90,6 +93,7 @@ function mergeQuotes(
       dividendYieldPct:
         a?.dividendYieldPct ?? p?.dividendYieldPct ?? null,
       marketCap: a?.marketCap ?? p?.marketCap ?? null,
+      peRatio: a?.peRatio ?? p?.peRatio ?? null,
       revenue: a?.revenue ?? p?.revenue ?? null,
       profit: a?.profit ?? p?.profit ?? null,
       flash: p && dir !== "none" ? dir : "none",
@@ -114,6 +118,8 @@ type TickerProps = {
   speed: number;
   paused: boolean;
   highlightSymbol?: string | null;
+  sectorFilter?: Set<string> | null;
+  customSymbols?: string[];
 };
 
 const SECTOR_ORDER = [
@@ -139,14 +145,52 @@ const STOCKS_BY_SECTOR: Stock[] = [...TOP_100_STOCKS].sort((a, b) => {
   return a.symbol.localeCompare(b.symbol);
 });
 
-export function Ticker({ screens, screen, speed, paused, highlightSymbol }: TickerProps) {
+export function Ticker({ screens, screen, speed, paused, highlightSymbol, sectorFilter, customSymbols }: TickerProps) {
+  const allStocks = useMemo<Stock[]>(() => {
+    const builtIn = [...TOP_100_STOCKS];
+    if (customSymbols && customSymbols.length > 0) {
+      const existing = new Set(builtIn.map((s) => s.symbol));
+      for (const sym of customSymbols) {
+        if (!existing.has(sym)) {
+          builtIn.push({ symbol: sym, name: sym, sector: "Custom", basePrice: 0 });
+        }
+      }
+    }
+    const order = [
+      "Technology",
+      "Communication Services",
+      "Consumer Discretionary",
+      "Consumer Staples",
+      "Health Care",
+      "Financials",
+      "Industrials",
+      "Energy",
+      "Materials",
+      "Real Estate",
+      "Utilities",
+      "Custom",
+    ];
+    return builtIn.sort((a, b) => {
+      const ai = order.indexOf(a.sector);
+      const bi = order.indexOf(b.sector);
+      const ax = ai === -1 ? 999 : ai;
+      const bx = bi === -1 ? 999 : bi;
+      if (ax !== bx) return ax - bx;
+      return a.symbol.localeCompare(b.symbol);
+    });
+  }, [customSymbols]);
+
   const slice = useMemo<Stock[]>(() => {
-    if (screens <= 1) return STOCKS_BY_SECTOR;
-    const total = STOCKS_BY_SECTOR.length;
+    let list = allStocks;
+    if (sectorFilter && sectorFilter.size > 0) {
+      list = list.filter((s) => sectorFilter.has(s.sector));
+    }
+    if (screens <= 1) return list;
+    const total = list.length;
     const per = Math.ceil(total / screens);
     const start = (screen - 1) * per;
-    return STOCKS_BY_SECTOR.slice(start, start + per);
-  }, [screens, screen]);
+    return list.slice(start, start + per);
+  }, [screens, screen, allStocks, sectorFilter]);
 
   const [quotes, setQuotes] = useState<LiveQuote[]>(() => placeholderQuotes(slice));
 
@@ -340,6 +384,11 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
           {quote.dividendYieldPct != null && quote.dividendYieldPct > 0 && (
             <div className="div-pill" title="Trailing 12-mo dividend yield">
               DIV {quote.dividendYieldPct.toFixed(2)}%
+            </div>
+          )}
+          {quote.peRatio != null && (
+            <div className="pe-pill" title="Trailing P/E ratio">
+              P/E {quote.peRatio.toFixed(1)}
             </div>
           )}
         </div>

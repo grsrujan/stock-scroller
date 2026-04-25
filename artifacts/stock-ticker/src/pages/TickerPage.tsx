@@ -3,6 +3,10 @@ import { MarketHeader } from "@/components/MarketHeader";
 import { Ticker } from "@/components/Ticker";
 import { ControlBar } from "@/components/ControlBar";
 import { SearchOverlay } from "@/components/SearchOverlay";
+import { SectorFilter } from "@/components/SectorFilter";
+import { CustomStocksModal } from "@/components/CustomStocksModal";
+
+const LS_KEY = "custom-stocks";
 
 function readNumberParam(name: string, fallback: number, min: number, max: number): number {
   if (typeof window === "undefined") return fallback;
@@ -20,6 +24,15 @@ function readBoolParam(name: string, fallback: boolean): boolean {
   return v === "1" || v === "true";
 }
 
+function loadCustomSymbols(): string[] {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function TickerPage() {
   const [screens, setScreens] = useState<number>(() =>
     readNumberParam("screens", 1, 1, 6),
@@ -35,6 +48,14 @@ export default function TickerPage() {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [highlightSymbol, setHighlightSymbol] = useState<string | null>(null);
+  const [sectorFilter, setSectorFilter] = useState<Set<string>>(new Set());
+  const [customSymbols, setCustomSymbols] = useState<string[]>(loadCustomSymbols);
+  const [customModalOpen, setCustomModalOpen] = useState(false);
+
+  const saveCustomSymbols = (syms: string[]) => {
+    setCustomSymbols(syms);
+    localStorage.setItem(LS_KEY, JSON.stringify(syms));
+  };
 
   useEffect(() => {
     if (screen > screens) setScreen(screens);
@@ -53,7 +74,7 @@ export default function TickerPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (searchOpen) return;
+      if (searchOpen || customModalOpen) return;
       if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         setPaused((p) => !p);
@@ -73,7 +94,7 @@ export default function TickerPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [searchOpen, highlightSymbol]);
+  }, [searchOpen, customModalOpen, highlightSymbol]);
 
   const toggleFullscreen = () => {
     const el = wrapRef.current;
@@ -105,6 +126,13 @@ export default function TickerPage() {
         tile={tile}
         onToggleTile={() => setTile(!tile)}
         onSearch={() => setSearchOpen(true)}
+        onCustomStocks={() => setCustomModalOpen(true)}
+      />
+
+      <SectorFilter
+        active={sectorFilter}
+        onChange={setSectorFilter}
+        hasCustom={customSymbols.length > 0}
       />
 
       <SearchOverlay
@@ -115,6 +143,13 @@ export default function TickerPage() {
           setHighlightSymbol(sym);
           setPaused(true);
         }}
+      />
+
+      <CustomStocksModal
+        open={customModalOpen}
+        onClose={() => setCustomModalOpen(false)}
+        symbols={customSymbols}
+        onSave={saveCustomSymbols}
       />
 
       <main className="ticker-main">
@@ -133,6 +168,8 @@ export default function TickerPage() {
                     speed={speed}
                     paused={paused}
                     highlightSymbol={highlightSymbol}
+                    sectorFilter={sectorFilter.size > 0 ? sectorFilter : null}
+                    customSymbols={customSymbols}
                   />
                   <div className="fade-top" aria-hidden="true" />
                   <div className="fade-bottom" aria-hidden="true" />
@@ -148,6 +185,8 @@ export default function TickerPage() {
               speed={speed}
               paused={paused}
               highlightSymbol={highlightSymbol}
+              sectorFilter={sectorFilter.size > 0 ? sectorFilter : null}
+              customSymbols={customSymbols}
             />
             <div className="fade-top" aria-hidden="true" />
             <div className="fade-bottom" aria-hidden="true" />

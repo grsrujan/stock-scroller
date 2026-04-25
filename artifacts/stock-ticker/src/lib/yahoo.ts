@@ -7,6 +7,7 @@ export type StockQuote = {
   fiftyTwoLow: number | null;
   dividendYieldPct: number | null;
   marketCap: number | null;
+  peRatio: number | null;
   revenue: number | null;
   profit: number | null;
 };
@@ -19,6 +20,7 @@ type ApiQuote = {
   fiftyTwoLow: number | null;
   dividendYieldPct: number | null;
   marketCap: number | null;
+  peRatio: number | null;
   revenue: number | null;
   profit: number | null;
 };
@@ -50,6 +52,7 @@ export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
     fiftyTwoLow: q.fiftyTwoLow,
     dividendYieldPct: q.dividendYieldPct,
     marketCap: q.marketCap,
+    peRatio: q.peRatio,
     revenue: q.revenue,
     profit: q.profit,
   }));

@@ -1,4 +1,4 @@
-import { Pause, Play, Maximize2, Gauge, Columns3, Square, Search } from "lucide-react";
+import { Pause, Play, Maximize2, Gauge, Columns3, Square, Search, Plus } from "lucide-react";
 
 type Props = {
   paused: boolean;
@@ -13,6 +13,7 @@ type Props = {
   tile: boolean;
   onToggleTile: () => void;
   onSearch: () => void;
+  onCustomStocks: () => void;
 };
 
 export function ControlBar({
@@ -28,6 +29,7 @@ export function ControlBar({
   tile,
   onToggleTile,
   onSearch,
+  onCustomStocks,
 }: Props) {
   return (
     <div className="control-bar">
@@ -37,6 +39,10 @@ export function ControlBar({
 
       <button className="ctrl-btn" onClick={onSearch} aria-label="Search" title="Search (/)">
         <Search className="ic" />
+      </button>
+
+      <button className="ctrl-btn" onClick={onCustomStocks} aria-label="Custom Stocks" title="Add custom stocks">
+        <Plus className="ic" />
       </button>
 
       <div className="ctrl-group">
