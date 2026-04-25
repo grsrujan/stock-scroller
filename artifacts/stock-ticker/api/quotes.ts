@@ -35,7 +35,7 @@ const financialsCache = new Map<string, { fin: Financials; ts: number }>();
 const finInFlight = new Set<string>();
 const finQueue: string[] = [];
 let finActive = 0;
-const FIN_MAX_CONCURRENT = 4;
+const FIN_MAX_CONCURRENT = 15;
 
 function pumpFinQueue() {
   while (finActive < FIN_MAX_CONCURRENT && finQueue.length > 0) {
@@ -133,6 +133,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (q && typeof q.symbol === "string") {
         bySymbol.set(q.symbol.toUpperCase(), q);
       }
+    }
+
+    const missingFin = symbols.filter(s => !financialsCache.has(s) && !finInFlight.has(s));
+    if (missingFin.length > 0) {
+      const toSync = missingFin.slice(0, 15);
+      toSync.forEach(sym => finInFlight.add(sym));
+      await Promise.all(toSync.map(async (sym) => {
+        await fetchFinancialsFor(sym);
+        finInFlight.delete(sym);
+      }));
     }
 
     const quotes: CachedQuote[] = symbols.map((sym) => {

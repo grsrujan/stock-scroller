@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MarketHeader } from "@/components/MarketHeader";
 import { Ticker } from "@/components/Ticker";
+import { ControlBar } from "@/components/ControlBar";
 
 function readNumberParam(name: string, fallback: number, min: number, max: number): number {
   if (typeof window === "undefined") return fallback;
@@ -80,6 +81,20 @@ export default function TickerPage() {
       <div className="glow-top" aria-hidden="true" />
 
       <MarketHeader screen={screen} screens={screens} />
+
+      <ControlBar
+        paused={paused}
+        onTogglePause={() => setPaused(!paused)}
+        speed={speed}
+        onSpeedChange={setSpeed}
+        screens={screens}
+        screen={screen}
+        onScreensChange={setScreens}
+        onScreenChange={setScreen}
+        onFullscreen={toggleFullscreen}
+        tile={tile}
+        onToggleTile={() => setTile(!tile)}
+      />
 
       <main className="ticker-main">
         {tile && screens > 1 ? (
