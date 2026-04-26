@@ -39,8 +39,8 @@ export function ControlBar({
       </button>
 
       <Link href="/watchlist">
-        <button className="ctrl-btn" title="Watchlist View">
-          <List className="ic" />
+        <button className="ctrl-btn text-btn" title="Watchlist View">
+          <span>WATCHLIST</span>
         </button>
       </Link>
 

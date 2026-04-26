@@ -132,7 +132,6 @@ export default function WatchlistPage() {
                 <Header label="Symbol" k="symbol" />
                 <Header label="Price" k="price" />
                 <Header label="% Change" k="changePct" />
-                <Header label="L/A Ratio" k="liabilityAssetsRatio" />
                 <Header label="Market Cap" k="marketCap" />
                 <Header label="Float Cap" k="floatCap" />
                 <Header label="Revenue" k="revenue" />
@@ -151,7 +150,6 @@ export default function WatchlistPage() {
                   <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
                     {formatPercent(q.changePct)}
                   </td>
-                  <td>{formatVal(q.liabilityAssetsRatio)}</td>
                   <td>{formatMarketCap(q.marketCap)}</td>
                   <td>{formatMarketCap(q.floatCap)}</td>
                   <td>{formatMarketCap(q.revenue)}</td>

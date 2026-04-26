@@ -1,67 +1,66 @@
 import { useEffect, useState } from "react";
+import { Activity, Clock, Globe } from "lucide-react";
 
-function useClock() {
-  const [now, setNow] = useState<Date>(() => new Date());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-  return now;
-}
-
-function isMarketOpen(d: Date): boolean {
-  const day = d.getUTCDay();
-  if (day === 0 || day === 6) return false;
-  const minutesUTC = d.getUTCHours() * 60 + d.getUTCMinutes();
-  // 13:30 UTC – 20:00 UTC ≈ NYSE 9:30am–4:00pm ET
-  return minutesUTC >= 13 * 60 + 30 && minutesUTC < 20 * 60;
-}
-
-export function MarketHeader({
-  screen,
-  screens,
-}: {
+type Props = {
   screen: number;
   screens: number;
-}) {
-  const now = useClock();
-  const open = isMarketOpen(now);
+};
 
-  const time = now.toLocaleTimeString(undefined, {
+export function MarketHeader({ screen, screens }: Props) {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const timeStr = time.toLocaleTimeString("en-US", {
+    hour12: false,
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: false,
   });
-  const date = now.toLocaleDateString(undefined, {
-    weekday: "short",
+
+  const dateStr = time.toLocaleDateString("en-US", {
     month: "short",
-    day: "numeric",
-  });
+    day: "2-digit",
+    year: "numeric",
+  }).toUpperCase();
 
   return (
     <header className="market-header">
       <div className="brand">
         <div className="brand-mark">
-          <span className="brand-dot" />
-          <span className="brand-name">PULSE</span>
-          <span className="brand-sub">MARKET TAPE</span>
+          <div className="brand-dot" />
+          <span className="brand-name">STOCK SCROLLER</span>
         </div>
-        <div className="brand-meta">
-          <span className={`status ${open ? "status-open" : "status-closed"}`}>
-            <span className="status-dot" />
-            {open ? "MARKETS OPEN" : "AFTER HOURS"}
-          </span>
-          {screens > 1 && (
-            <span className="screen-pill">
-              SCREEN {screen} / {screens}
-            </span>
-          )}
-        </div>
+        <div className="brand-sub">WATCHLIST | TOP GAINERS | TOP LOSERS</div>
       </div>
-      <div className="clock">
-        <div className="time">{time}</div>
-        <div className="date">{date}</div>
+
+      <div className="brand-meta">
+        <div className="status">
+          <Activity size={10} className="text-up" />
+          <span>LIVE MARKET DATA</span>
+        </div>
+        <div className="v-line" />
+        <div className="status">
+          <Clock size={10} className="muted" />
+          <span>{dateStr}</span>
+          <span className="time">{timeStr}</span>
+        </div>
+        <div className="v-line" />
+        <div className="status">
+          <Globe size={10} className="muted" />
+          <span>GLOBAL NY-LN-TK</span>
+        </div>
+        {screens > 1 && (
+          <>
+            <div className="v-line" />
+            <div className="screen-indicator">
+              SCREEN {screen} OF {screens}
+            </div>
+          </>
+        )}
       </div>
     </header>
   );
