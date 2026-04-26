@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Activity, Clock, Globe } from "lucide-react";
+import { Activity, Clock, Globe, LayoutGrid, List } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 type Props = {
   screen: number;
@@ -8,6 +9,7 @@ type Props = {
 
 export function MarketHeader({ screen, screens }: Props) {
   const [time, setTime] = useState(new Date());
+  const [location] = useLocation();
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000);
@@ -30,11 +32,19 @@ export function MarketHeader({ screen, screens }: Props) {
   return (
     <header className="market-header">
       <div className="brand">
-        <div className="brand-mark">
-          <div className="brand-dot" />
-          <span className="brand-name">STOCK SCROLLER</span>
-        </div>
-        <div className="brand-sub">WATCHLIST | TOP GAINERS | TOP LOSERS</div>
+        <Link href="/">
+          <div className={`brand-link ${location === "/" ? "active" : ""}`}>
+            <LayoutGrid size={14} />
+            <span className="brand-name">STOCK SCROLLER</span>
+          </div>
+        </Link>
+        <div className="v-divider" />
+        <Link href="/watchlist">
+          <div className={`brand-link ${location === "/watchlist" ? "active" : ""}`}>
+            <List size={14} />
+            <span className="brand-name">WATCHLIST</span>
+          </div>
+        </Link>
       </div>
 
       <div className="brand-meta">
@@ -53,7 +63,7 @@ export function MarketHeader({ screen, screens }: Props) {
           <Globe size={10} className="muted" />
           <span>GLOBAL NY-LN-TK</span>
         </div>
-        {screens > 1 && (
+        {screens > 1 && location === "/" && (
           <>
             <div className="v-line" />
             <div className="screen-indicator">

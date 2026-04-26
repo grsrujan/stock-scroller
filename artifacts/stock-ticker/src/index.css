@@ -100,22 +100,27 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
 }
 
-.brand-mark {
+.brand-link {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 120ms ease;
+  color: var(--color-muted-foreground);
 }
 
-.brand-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-accent);
-  border-radius: 999px;
-  box-shadow: 0 0 10px rgba(255, 203, 58, 0.6);
-  animation: pulse 1.6s infinite ease-in-out;
+.brand-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-fg);
+}
+
+.brand-link.active {
+  color: var(--color-accent);
 }
 
 .brand-name {
@@ -123,7 +128,12 @@ body {
   font-weight: 800;
   font-size: clamp(12px, 1.4vw, 16px);
   letter-spacing: 0.14em;
-  color: var(--color-accent);
+}
+
+.v-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--color-border);
 }
 
 .brand-sub {
