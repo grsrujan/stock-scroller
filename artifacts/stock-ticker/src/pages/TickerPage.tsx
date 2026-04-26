@@ -120,7 +120,11 @@ export default function TickerPage() {
         onSpeedChange={setSpeed}
         screens={screens}
         screen={screen}
-        onScreensChange={setScreens}
+        onScreensChange={(n) => {
+          setScreens(n);
+          if (n > 1) setTile(true);
+          else setTile(false);
+        }}
         onScreenChange={setScreen}
         onFullscreen={toggleFullscreen}
         tile={tile}
