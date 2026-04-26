@@ -1,4 +1,4 @@
-import { Pause, Play, Maximize2, Gauge, Columns3, Square, Search, Plus } from "lucide-react";
+import { Pause, Play, Maximize2, Gauge, Search, Plus } from "lucide-react";
 
 type Props = {
   paused: boolean;
@@ -6,12 +6,8 @@ type Props = {
   speed: number;
   onSpeedChange: (n: number) => void;
   screens: number;
-  screen: number;
   onScreensChange: (n: number) => void;
-  onScreenChange: (n: number) => void;
   onFullscreen: () => void;
-  tile: boolean;
-  onToggleTile: () => void;
   onSearch: () => void;
   onCustomStocks: () => void;
 };
@@ -22,12 +18,8 @@ export function ControlBar({
   speed,
   onSpeedChange,
   screens,
-  screen,
   onScreensChange,
-  onScreenChange,
   onFullscreen,
-  tile,
-  onToggleTile,
   onSearch,
   onCustomStocks,
 }: Props) {
@@ -71,32 +63,6 @@ export function ControlBar({
             </option>
           ))}
         </select>
-        {screens > 1 && !tile && (
-          <>
-            <span className="ctrl-label">This is</span>
-            <select
-              value={screen}
-              onChange={(e) => onScreenChange(Number(e.target.value))}
-            >
-              {Array.from({ length: screens }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>
-                  Screen {n}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-        {screens > 1 && (
-          <button
-            className={`ctrl-toggle ${tile ? "on" : ""}`}
-            onClick={onToggleTile}
-            aria-label="Toggle tile view"
-            title={tile ? "Show single screen" : "Show all screens side by side"}
-          >
-            {tile ? <Square className="ic" /> : <Columns3 className="ic" />}
-            <span>{tile ? "Single" : "Tile all"}</span>
-          </button>
-        )}
       </div>
 
       <button className="ctrl-btn" onClick={onFullscreen} aria-label="Fullscreen">

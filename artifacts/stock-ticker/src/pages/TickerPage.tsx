@@ -17,13 +17,6 @@ function readNumberParam(name: string, fallback: number, min: number, max: numbe
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
-function readBoolParam(name: string, fallback: boolean): boolean {
-  if (typeof window === "undefined") return fallback;
-  const v = new URLSearchParams(window.location.search).get(name);
-  if (v === null) return fallback;
-  return v === "1" || v === "true";
-}
-
 function loadCustomSymbols(): string[] {
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -37,14 +30,8 @@ export default function TickerPage() {
   const [screens, setScreens] = useState<number>(() =>
     readNumberParam("screens", 1, 1, 6),
   );
-  const [screen, setScreen] = useState<number>(() =>
-    readNumberParam("screen", 1, 1, 6),
-  );
   const [speed, setSpeed] = useState<number>(() => readNumberParam("speed", 20, 5, 80));
   const [paused, setPaused] = useState<boolean>(false);
-  const [tile, setTile] = useState<boolean>(() =>
-    readBoolParam("tile", readNumberParam("screens", 1, 1, 6) > 1),
-  );
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [highlightSymbol, setHighlightSymbol] = useState<string | null>(null);
@@ -58,18 +45,11 @@ export default function TickerPage() {
   };
 
   useEffect(() => {
-    if (screen > screens) setScreen(screens);
-  }, [screens, screen]);
-
-  useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("screens", String(screens));
-    url.searchParams.set("screen", String(screen));
     url.searchParams.set("speed", String(speed));
-    if (tile) url.searchParams.set("tile", "1");
-    else url.searchParams.delete("tile");
     window.history.replaceState({}, "", url.toString());
-  }, [screens, screen, speed, tile]);
+  }, [screens, speed]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -111,7 +91,7 @@ export default function TickerPage() {
       <div className="grid-bg" aria-hidden="true" />
       <div className="glow-top" aria-hidden="true" />
 
-      <MarketHeader screen={screen} screens={screens} />
+      <MarketHeader screen={1} screens={screens} />
 
       <ControlBar
         paused={paused}
@@ -119,16 +99,8 @@ export default function TickerPage() {
         speed={speed}
         onSpeedChange={setSpeed}
         screens={screens}
-        screen={screen}
-        onScreensChange={(n) => {
-          setScreens(n);
-          if (n > 1) setTile(true);
-          else setTile(false);
-        }}
-        onScreenChange={setScreen}
+        onScreensChange={setScreens}
         onFullscreen={toggleFullscreen}
-        tile={tile}
-        onToggleTile={() => setTile(!tile)}
         onSearch={() => setSearchOpen(true)}
         onCustomStocks={() => setCustomModalOpen(true)}
       />
@@ -157,7 +129,7 @@ export default function TickerPage() {
       />
 
       <main className="ticker-main">
-        {tile && screens > 1 ? (
+        {screens > 1 ? (
           <div
             className="tile-grid"
             style={{ gridTemplateColumns: `repeat(${screens}, minmax(0, 1fr))` }}
@@ -184,8 +156,8 @@ export default function TickerPage() {
         ) : (
           <>
             <Ticker
-              screens={screens}
-              screen={screen}
+              screens={1}
+              screen={1}
               speed={speed}
               paused={paused}
               highlightSymbol={highlightSymbol}
