@@ -38,12 +38,6 @@ export function ControlBar({
         <Plus className="ic" />
       </button>
 
-      <Link href="/watchlist">
-        <button className="ctrl-btn text-btn" title="Watchlist View">
-          <span>WATCHLIST</span>
-        </button>
-      </Link>
-
       <div className="ctrl-group">
         <Gauge className="ic muted" />
         <input
