@@ -1021,3 +1021,159 @@ body {
 .custom-rm:hover {
   opacity: 1;
 }
+
+/* ===== Watchlist Page ===== */
+.watchlist-page {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.watchlist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.watchlist-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 120ms;
+}
+
+.back-link:hover {
+  opacity: 1;
+}
+
+.v-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+}
+
+.watchlist-header h1 {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--color-fg);
+  margin: 0;
+}
+
+.watchlist-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  padding: 0 12px;
+  border-radius: 6px;
+  width: 300px;
+}
+
+.watchlist-search input {
+  background: transparent;
+  border: none;
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  height: 36px;
+  width: 100%;
+  outline: none;
+}
+
+.table-container {
+  flex: 1;
+  overflow: auto;
+  background: var(--color-bg);
+}
+
+.watchlist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: left;
+}
+
+.watchlist-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-panel-2);
+  padding: 12px 16px;
+  color: var(--color-muted-foreground);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+  z-index: 10;
+}
+
+.watchlist-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.watchlist-table thead th.sortable:hover {
+  color: var(--color-accent);
+  background: rgba(255, 203, 58, 0.05);
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.watchlist-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.watchlist-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sym-cell {
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+.price-cell {
+  font-weight: 700;
+}
+
+.change-cell.pos { color: var(--color-up); }
+.change-cell.neg { color: var(--color-down); }
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: var(--font-mono);
+  color: var(--color-muted-foreground);
+  letter-spacing: 0.1em;
+}

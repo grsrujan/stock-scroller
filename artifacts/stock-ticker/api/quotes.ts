@@ -16,6 +16,11 @@ type CachedQuote = {
   peRatio: number | null;
   revenue: number | null;
   profit: number | null;
+  // New metrics for watchlist
+  liabilityAssetsRatio: number | null;
+  floatCap: number | null;
+  pbRatio: number | null;
+  psRatio: number | null;
   marketState: string | null;
   currency: string | null;
 };
@@ -28,15 +33,24 @@ type CacheEntry = {
 const CACHE_TTL_MS = 12_000;
 const cache = new Map<string, CacheEntry>();
 
-// Revenue / profit are reported quarterly so a 24h cache is plenty.
+// Financial metrics reported quarterly/annually
 const FIN_TTL_MS = 24 * 60 * 60 * 1000;
 const FIN_RETRY_MS = 60 * 60 * 1000;
-type Financials = { revenue: number | null; profit: number | null };
+
+type Financials = {
+  revenue: number | null;
+  profit: number | null;
+  liabilityAssetsRatio: number | null;
+  floatShares: number | null;
+  pbRatio: number | null;
+  psRatio: number | null;
+};
+
 const financialsCache = new Map<string, { fin: Financials; ts: number }>();
 const finInFlight = new Set<string>();
 const finQueue: string[] = [];
 let finActive = 0;
-const FIN_MAX_CONCURRENT = 15;
+const FIN_MAX_CONCURRENT = 10;
 
 function pumpFinQueue() {
   while (finActive < FIN_MAX_CONCURRENT && finQueue.length > 0) {
@@ -56,17 +70,39 @@ async function fetchFinancialsFor(symbol: string): Promise<void> {
   try {
     const summary = await yahooFinance.quoteSummary(
       symbol,
-      { modules: ["financialData", "defaultKeyStatistics"] },
+      { modules: ["financialData", "defaultKeyStatistics", "summaryDetail"] },
       { validateResult: false },
     );
-    const fd = (summary as { financialData?: { totalRevenue?: number } } | null)?.financialData;
-    const ks = (summary as { defaultKeyStatistics?: { netIncomeToCommon?: number } } | null)?.defaultKeyStatistics;
-    const revenue = typeof fd?.totalRevenue === "number" ? fd.totalRevenue : null;
-    const profit = typeof ks?.netIncomeToCommon === "number" ? ks.netIncomeToCommon : null;
-    financialsCache.set(symbol, { fin: { revenue, profit }, ts: Date.now() });
-  } catch {
+
+    const fd = summary.financialData || {};
+    const ks = summary.defaultKeyStatistics || {};
+    const sd = summary.summaryDetail || {};
+
+    // Liability/Assets Ratio
+    let laRatio = null;
+    const totalAssets = fd.totalAssets; // Note: yahoo-finance2 might not provide this directly in financialData for all stocks
+    const totalLiabilities = fd.totalLiabilities;
+    if (typeof totalAssets === "number" && typeof totalLiabilities === "number" && totalAssets > 0) {
+      laRatio = totalLiabilities / totalAssets;
+    } else if (typeof fd.debtToEquity === "number") {
+      // Fallback: use debtToEquity to estimate or just provide debtToEquity if LA is missing
+      // For simplicity, if we can't get LA, we'll try to calculate from other fields if possible
+    }
+
+    const fin: Financials = {
+      revenue: typeof fd.totalRevenue === "number" ? fd.totalRevenue : null,
+      profit: typeof ks.netIncomeToCommon === "number" ? ks.netIncomeToCommon : null,
+      liabilityAssetsRatio: laRatio,
+      floatShares: typeof ks.floatShares === "number" ? ks.floatShares : null,
+      pbRatio: typeof ks.priceToBook === "number" ? ks.priceToBook : null,
+      psRatio: typeof ks.priceToSalesTrailing12Months === "number" ? ks.priceToSalesTrailing12Months : (typeof sd.priceToSalesTrailing12Months === "number" ? sd.priceToSalesTrailing12Months : null),
+    };
+
+    financialsCache.set(symbol, { fin, ts: Date.now() });
+  } catch (err) {
+    console.error(`Fin fetch failed for ${symbol}`, err);
     financialsCache.set(symbol, {
-      fin: { revenue: null, profit: null },
+      fin: { revenue: null, profit: null, liabilityAssetsRatio: null, floatShares: null, pbRatio: null, psRatio: null },
       ts: Date.now() - FIN_TTL_MS + FIN_RETRY_MS,
     });
   }
@@ -84,8 +120,17 @@ function scheduleFinancialsLookups(symbols: string[]) {
   pumpFinQueue();
 }
 
+const EMPTY_FIN: Financials = {
+  revenue: null,
+  profit: null,
+  liabilityAssetsRatio: null,
+  floatShares: null,
+  pbRatio: null,
+  psRatio: null,
+};
+
 function getFinancials(sym: string): Financials {
-  return financialsCache.get(sym)?.fin ?? { revenue: null, profit: null };
+  return financialsCache.get(sym)?.fin ?? EMPTY_FIN;
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -109,6 +154,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cacheKey = symbols.join(",");
   const cached = cache.get(cacheKey);
   const now = Date.now();
+
   if (cached && now - cached.ts < CACHE_TTL_MS) {
     const patched = cached.quotes.map((q) => {
       const fin = getFinancials(q.symbol);
@@ -116,6 +162,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...q,
         revenue: fin.revenue ?? q.revenue,
         profit: fin.profit ?? q.profit,
+        liabilityAssetsRatio: fin.liabilityAssetsRatio ?? q.liabilityAssetsRatio,
+        floatCap: fin.floatShares ? fin.floatShares * (q.price || 0) : q.floatCap,
+        pbRatio: fin.pbRatio ?? q.pbRatio,
+        psRatio: fin.psRatio ?? q.psRatio,
       };
     });
     scheduleFinancialsLookups(symbols);
@@ -138,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const missingFin = symbols.filter(s => !financialsCache.has(s) && !finInFlight.has(s));
     if (missingFin.length > 0) {
-      const toSync = missingFin.slice(0, 15);
+      const toSync = missingFin.slice(0, 10);
       toSync.forEach(sym => finInFlight.add(sym));
       await Promise.all(toSync.map(async (sym) => {
         await fetchFinancialsFor(sym);
@@ -149,6 +199,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const quotes: CachedQuote[] = symbols.map((sym) => {
       const q = bySymbol.get(sym);
       const fin = getFinancials(sym);
+
       if (!q) {
         return {
           symbol: sym,
@@ -162,10 +213,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           peRatio: null,
           revenue: fin.revenue,
           profit: fin.profit,
+          liabilityAssetsRatio: fin.liabilityAssetsRatio,
+          floatCap: null,
+          pbRatio: fin.pbRatio,
+          psRatio: fin.psRatio,
           marketState: null,
           currency: null,
         };
       }
+
       const price =
         (q.regularMarketPrice as number | undefined) ??
         (q.postMarketPrice as number | undefined) ??
@@ -179,8 +235,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         (q.regularMarketChangePercent as number | undefined) ??
         (q.postMarketChangePercent as number | undefined) ??
         null;
+
       const trailingDivYield = q.trailingAnnualDividendYield as number | undefined;
       const dividendYieldPct = typeof trailingDivYield === "number" ? trailingDivYield * 100 : 0;
+
       return {
         symbol: sym,
         price,
@@ -193,6 +251,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         peRatio: (q.trailingPE as number | undefined) ?? null,
         revenue: fin.revenue,
         profit: fin.profit,
+        liabilityAssetsRatio: fin.liabilityAssetsRatio,
+        floatCap: fin.floatShares ? fin.floatShares * (price || 0) : null,
+        pbRatio: fin.pbRatio,
+        psRatio: fin.psRatio,
         marketState: (q.marketState as string | undefined) ?? null,
         currency: (q.currency as string | undefined) ?? null,
       };

@@ -1,4 +1,5 @@
-import { Pause, Play, Maximize2, Gauge, Search, Plus } from "lucide-react";
+import { Pause, Play, Maximize2, Gauge, Search, Plus, List } from "lucide-react";
+import { Link } from "wouter";
 
 type Props = {
   paused: boolean;
@@ -36,6 +37,12 @@ export function ControlBar({
       <button className="ctrl-btn" onClick={onCustomStocks} aria-label="Custom Stocks" title="Add custom stocks">
         <Plus className="ic" />
       </button>
+
+      <Link href="/watchlist">
+        <button className="ctrl-btn" title="Watchlist View">
+          <List className="ic" />
+        </button>
+      </Link>
 
       <div className="ctrl-group">
         <Gauge className="ic muted" />
