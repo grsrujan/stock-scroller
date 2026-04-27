@@ -4,11 +4,8 @@ import { TOP_100_STOCKS } from "@/data/stocks";
 import { ArrowUp, ArrowDown, Search, LayoutGrid } from "lucide-react";
 import { Link } from "wouter";
 
-type SortKey = keyof StockQuote;
-type SortOrder = "asc" | "desc";
-
 function formatMarketCap(n: number | null): string {
-  if (n === null) return "—";
+  if (n === null || isNaN(n)) return "—";
   const abs = Math.abs(n);
   if (abs >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
   if (abs >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
@@ -17,12 +14,12 @@ function formatMarketCap(n: number | null): string {
 }
 
 function formatPercent(n: number | null): string {
-  if (n === null) return "—";
+  if (n === null || isNaN(n)) return "—";
   return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 }
 
 function formatVal(v: any): string {
-  if (v === null || v === undefined) return "—";
+  if (v === null || v === undefined || isNaN(v)) return "—";
   if (typeof v === "number") return v.toFixed(2);
   return String(v);
 }
@@ -31,46 +28,53 @@ export default function WatchlistPage() {
   const [quotes, setQuotes] = useState<StockQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("marketCap");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<keyof StockQuote>("marketCap");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const stockMap = useMemo(() => {
     const map = new Map<string, string>();
-    TOP_100_STOCKS.forEach((s) => map.set(s.symbol.toUpperCase(), s.name));
+    if (Array.isArray(TOP_100_STOCKS)) {
+      TOP_100_STOCKS.forEach((s) => map.set(s.symbol.toUpperCase(), s.name));
+    }
     return map;
   }, []);
 
   const symbols = useMemo(() => {
-    const builtIn = TOP_100_STOCKS.map((s) => s.symbol);
-    const customRaw = localStorage.getItem("custom-stocks");
-    const custom = customRaw ? JSON.parse(customRaw) : [];
-    return Array.from(new Set([...builtIn, ...custom]));
+    try {
+      const builtIn = Array.isArray(TOP_100_STOCKS) ? TOP_100_STOCKS.map((s) => s.symbol) : [];
+      const customRaw = localStorage.getItem("custom-stocks");
+      const custom = customRaw ? JSON.parse(customRaw) : [];
+      return Array.from(new Set([...builtIn, ...custom]));
+    } catch (e) {
+      console.error("Error parsing symbols", e);
+      return Array.isArray(TOP_100_STOCKS) ? TOP_100_STOCKS.map((s) => s.symbol) : [];
+    }
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    const fetch = async () => {
+    const load = async () => {
+      if (symbols.length === 0) {
+        setLoading(false);
+        return;
+      }
       try {
         const data = await fetchAllQuotes(symbols);
         if (!cancelled) {
-          if (data.length === 0 && symbols.length > 0) {
-            setError("Failed to fetch any data. Please check your connection or try again later.");
-          } else {
-            setQuotes(data);
-            setError(null);
-          }
+          setQuotes(data);
+          setError(null);
           setLoading(false);
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "An unknown error occurred");
+          setError("Failed to load market data.");
           setLoading(false);
         }
       }
     };
-    fetch();
-    const id = setInterval(fetch, 60000); // 1 minute refresh for large list
+    load();
+    const id = setInterval(load, 45000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -81,38 +85,21 @@ export default function WatchlistPage() {
     let list = [...quotes];
     if (search) {
       const q = search.toUpperCase();
-      list = list.filter((s) => s.symbol.includes(q) || (stockMap.get(s.symbol) || "").toUpperCase().includes(q));
+      list = list.filter((s) => 
+        s.symbol.toUpperCase().includes(q) || 
+        (stockMap.get(s.symbol) || "").toUpperCase().includes(q)
+      );
     }
     return list.sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
       if (av === bv) return 0;
-      if (av === null) return 1;
-      if (bv === null) return -1;
+      if (av === null || av === undefined) return 1;
+      if (bv === null || bv === undefined) return -1;
       const res = av > bv ? 1 : -1;
       return sortOrder === "asc" ? res : -res;
     });
-  }, [quotes, sortKey, sortOrder, search, stockMap]);
-
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortOrder("desc");
-    }
-  };
-
-  const Header = ({ label, k }: { label: string; k: SortKey }) => (
-    <th className="sortable" onClick={() => handleSort(k)}>
-      <div className="th-content">
-        <span>{label}</span>
-        {sortKey === k && (
-          sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
-        )}
-      </div>
-    </th>
-  );
+  }, [quotes, search, sortKey, sortOrder, stockMap]);
 
   return (
     <div className="watchlist-page">
@@ -125,12 +112,11 @@ export default function WatchlistPage() {
           <div className="v-divider" />
           <h1>WATCHLIST</h1>
         </div>
-
         <div className="watchlist-search">
           <Search size={16} className="muted" />
           <input
             type="text"
-            placeholder="Search symbols or names..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -141,30 +127,28 @@ export default function WatchlistPage() {
         {loading && quotes.length === 0 ? (
           <div className="loading-state">
             <div className="spinner" />
-            <p>Loading market data for {symbols.length} stocks...</p>
+            <p>Syncing {symbols.length} stocks...</p>
           </div>
         ) : error ? (
           <div className="loading-state error">
-            <p>⚠️ {error}</p>
+            <p>{error}</p>
             <button onClick={() => window.location.reload()} className="retry-btn">Retry</button>
           </div>
-        ) : sorted.length === 0 && search ? (
-          <div className="loading-state">No stocks match your search.</div>
         ) : (
           <table className="watchlist-table">
             <thead>
               <tr>
-                <Header label="Symbol" k="symbol" />
-                <Header label="Price" k="price" />
-                <Header label="% Change" k="changePct" />
-                <Header label="Market Cap" k="marketCap" />
-                <Header label="Float Cap" k="floatCap" />
-                <Header label="Revenue" k="revenue" />
-                <Header label="Net Income" k="profit" />
-                <Header label="Div %" k="dividendYieldPct" />
-                <Header label="P/B" k="pbRatio" />
-                <Header label="P/E" k="peRatio" />
-                <Header label="P/S" k="psRatio" />
+                <th onClick={() => { setSortKey("symbol"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Symbol</th>
+                <th onClick={() => { setSortKey("price"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Price</th>
+                <th onClick={() => { setSortKey("changePct"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>% Change</th>
+                <th onClick={() => { setSortKey("marketCap"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Market Cap</th>
+                <th onClick={() => { setSortKey("floatCap"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Float Cap</th>
+                <th onClick={() => { setSortKey("revenue"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Revenue</th>
+                <th onClick={() => { setSortKey("profit"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Net Income</th>
+                <th>Div %</th>
+                <th>P/B</th>
+                <th>P/E</th>
+                <th>P/S</th>
               </tr>
             </thead>
             <tbody>
@@ -173,12 +157,10 @@ export default function WatchlistPage() {
                   <td className="sym-cell">
                     <div className="sym-info">
                       <span className="sym-ticker">{q.symbol}</span>
-                      <span className="sym-name">{stockMap.get(q.symbol) || "Unknown"}</span>
+                      <span className="sym-name">{stockMap.get(q.symbol) || "Stock"}</span>
                     </div>
                   </td>
-                  <td className="price-cell">
-                    ${q.price.toFixed(2)}
-                  </td>
+                  <td className="price-cell">${formatVal(q.price)}</td>
                   <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
                     {formatPercent(q.changePct)}
                   </td>
