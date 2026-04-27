@@ -32,7 +32,6 @@ type CacheEntry = {
 const CACHE_TTL_MS = 12_000;
 const cache = new Map<string, CacheEntry>();
 
-// Financial metrics reported quarterly/annually
 const FIN_TTL_MS = 24 * 60 * 60 * 1000;
 const FIN_RETRY_MS = 60 * 60 * 1000;
 
@@ -48,30 +47,39 @@ type Financials = {
 
 const financialsCache = new Map<string, { fin: Financials; ts: number }>();
 const fxCache = new Map<string, { rate: number; ts: number }>();
-const fxInFlight = new Set<string>();
-
-const finInFlight = new Set<string>();
-const finQueue: string[] = [];
-let finActive = 0;
-const FIN_MAX_CONCURRENT = 10;
+const fxPromises = new Map<string, Promise<number>>();
 
 async function getFxRate(from: string): Promise<number> {
   const to = "USD";
-  if (from === to) return 1.0;
+  if (!from || from === to) return 1.0;
   const key = `${from}${to}=X`;
   
   const cached = fxCache.get(key);
   if (cached && Date.now() - cached.ts < 3600_000) return cached.rate;
 
-  try {
-    const q = await yahooFinance.quote(key);
-    const rate = q.regularMarketPrice || 1.0;
-    fxCache.set(key, { rate, ts: Date.now() });
-    return rate;
-  } catch {
-    return 1.0;
-  }
+  if (fxPromises.has(key)) return fxPromises.get(key)!;
+
+  const p = (async () => {
+    try {
+      const q = await yahooFinance.quote(key);
+      const rate = q.regularMarketPrice || 1.0;
+      fxCache.set(key, { rate, ts: Date.now() });
+      return rate;
+    } catch {
+      return 1.0;
+    } finally {
+      fxPromises.delete(key);
+    }
+  })();
+
+  fxPromises.set(key, p);
+  return p;
 }
+
+const finInFlight = new Set<string>();
+const finQueue: string[] = [];
+let finActive = 0;
+const FIN_MAX_CONCURRENT = 10;
 
 function pumpFinQueue() {
   while (finActive < FIN_MAX_CONCURRENT && finQueue.length > 0) {
@@ -100,14 +108,10 @@ async function fetchFinancialsFor(symbol: string): Promise<void> {
     const sd = summary.summaryDetail || {};
 
     const currency = fd.financialCurrency || "USD";
-    let rate = 1.0;
-    if (currency !== "USD") {
-      rate = await getFxRate(currency);
-    }
+    const rate = await getFxRate(currency);
 
     const convert = (val: any) => (typeof val === "number" ? val * rate : null);
 
-    // Liability/Assets Ratio
     let laRatio = null;
     const totalAssets = fd.totalAssets;
     const totalLiabilities = fd.totalLiabilities;
@@ -122,7 +126,7 @@ async function fetchFinancialsFor(symbol: string): Promise<void> {
       floatShares: typeof ks.floatShares === "number" ? ks.floatShares : null,
       pbRatio: typeof ks.priceToBook === "number" ? ks.priceToBook : null,
       psRatio: typeof ks.priceToSalesTrailing12Months === "number" ? ks.priceToSalesTrailing12Months : (typeof sd.priceToSalesTrailing12Months === "number" ? sd.priceToSalesTrailing12Months : null),
-      currency: "USD", // We've converted them
+      currency: "USD",
     };
 
     financialsCache.set(symbol, { fin, ts: Date.now() });
@@ -146,18 +150,8 @@ function scheduleFinancialsLookups(symbols: string[]) {
   pumpFinQueue();
 }
 
-const EMPTY_FIN: Financials = {
-  revenue: null,
-  profit: null,
-  liabilityAssetsRatio: null,
-  floatShares: null,
-  pbRatio: null,
-  psRatio: null,
-  currency: "USD",
-};
-
 function getFinancials(sym: string): Financials {
-  return financialsCache.get(sym)?.fin ?? EMPTY_FIN;
+  return financialsCache.get(sym)?.fin ?? { revenue: null, profit: null, liabilityAssetsRatio: null, floatShares: null, pbRatio: null, psRatio: null, currency: "USD" };
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -167,122 +161,74 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const raw = String(req.query["symbols"] ?? "").trim();
-  if (!raw) {
-    res.status(400).json({ error: "Missing 'symbols' query param" });
-    return;
-  }
-  const symbols = raw
-    .split(",")
-    .map((s) => s.trim().toUpperCase())
-    .filter(Boolean)
-    .slice(0, 500);
-
-  const cacheKey = symbols.join(",");
-  const cached = cache.get(cacheKey);
-  const now = Date.now();
-
-  if (cached && now - cached.ts < CACHE_TTL_MS) {
-    const patched = await Promise.all(cached.quotes.map(async (q) => {
-      const fin = getFinancials(q.symbol);
-      let quoteRate = 1.0;
-      if (q.currency && q.currency !== "USD") {
-        quoteRate = await getFxRate(q.currency);
-      }
-      return {
-        ...q,
-        price: q.price ? q.price * quoteRate : null,
-        change: q.change ? q.change * quoteRate : null,
-        fiftyTwoHigh: q.fiftyTwoHigh ? q.fiftyTwoHigh * quoteRate : null,
-        fiftyTwoLow: q.fiftyTwoLow ? q.fiftyTwoLow * quoteRate : null,
-        revenue: fin.revenue ?? q.revenue,
-        profit: fin.profit ?? q.profit,
-        floatCap: fin.floatShares ? fin.floatShares * (q.price || 0) * quoteRate : q.floatCap,
-        marketCap: q.marketCap ? q.marketCap * quoteRate : null,
-        currency: "USD",
-      };
-    }));
-    scheduleFinancialsLookups(symbols);
-    res.json({ asOf: cached.ts, quotes: patched });
-    return;
-  }
-
   try {
+    const raw = String(req.query["symbols"] ?? "").trim();
+    if (!raw) {
+      res.status(400).json({ error: "Missing 'symbols' query param" });
+      return;
+    }
+    const symbols = raw.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean).slice(0, 500);
+
+    const cacheKey = symbols.join(",");
+    const cached = cache.get(cacheKey);
+    const now = Date.now();
+
+    if (cached && now - cached.ts < CACHE_TTL_MS) {
+      // Return cached quotes immediately, don't wait for FX or financial refreshes
+      scheduleFinancialsLookups(symbols);
+      res.json({ asOf: cached.ts, quotes: cached.quotes });
+      return;
+    }
+
     const batches = chunk(symbols, 50);
     const results = await Promise.all(
       batches.map((batch) => yahooFinance.quote(batch, {}, { validateResult: false })),
     );
     const flat = results.flat();
-    const bySymbol = new Map<string, (typeof flat)[number]>();
+    const bySymbol = new Map<string, any>();
     for (const q of flat) {
-      if (q && typeof q.symbol === "string") {
-        bySymbol.set(q.symbol.toUpperCase(), q);
-      }
+      if (q && q.symbol) bySymbol.set(q.symbol.toUpperCase(), q);
     }
 
-    const missingFin = symbols.filter(s => !financialsCache.has(s) && !finInFlight.has(s));
-    if (missingFin.length > 0) {
-      // Very conservative synchronous fetch to stay under Vercel's 10s limit
-      const toSync = missingFin.slice(0, 3);
-      toSync.forEach(sym => finInFlight.add(sym));
-      await Promise.all(toSync.map(async (sym) => {
-        await fetchFinancialsFor(sym);
-        finInFlight.delete(sym);
-      }));
-    }
-
-    const quotes: CachedQuote[] = await Promise.all(symbols.map(async (sym) => {
+    const quotes: CachedQuote[] = [];
+    for (const sym of symbols) {
       const q = bySymbol.get(sym);
       const fin = getFinancials(sym);
+      
+      if (!q) {
+        quotes.push({ symbol: sym, price: null, currency: "USD", ...fin });
+        continue;
+      }
 
-      if (!q) return { symbol: sym, price: null, currency: "USD", ...fin };
-
-      const quoteCurrency = q.currency || "USD";
-      const qRate = await getFxRate(quoteCurrency);
-
-      const price =
-        (q.regularMarketPrice as number | undefined) ??
-        (q.postMarketPrice as number | undefined) ??
-        (q.preMarketPrice as number | undefined) ??
-        null;
-      const change =
-        (q.regularMarketChange as number | undefined) ??
-        (q.postMarketChange as number | undefined) ??
-        null;
-      const changePercent =
-        (q.regularMarketChangePercent as number | undefined) ??
-        (q.postMarketChangePercent as number | undefined) ??
-        null;
-
-      const trailingDivYield = q.trailingAnnualDividendYield as number | undefined;
-      const dividendYieldPct = typeof trailingDivYield === "number" ? trailingDivYield * 100 : 0;
-
-      return {
+      const qRate = await getFxRate(q.currency);
+      const price = q.regularMarketPrice || q.postMarketPrice || q.preMarketPrice || null;
+      
+      quotes.push({
         symbol: sym,
         price: price ? price * qRate : null,
-        change: change ? change * qRate : null,
-        changePercent,
+        change: q.regularMarketChange ? q.regularMarketChange * qRate : null,
+        changePercent: q.regularMarketChangePercent || null,
         fiftyTwoHigh: q.fiftyTwoWeekHigh ? q.fiftyTwoWeekHigh * qRate : null,
         fiftyTwoLow: q.fiftyTwoWeekLow ? q.fiftyTwoWeekLow * qRate : null,
-        dividendYieldPct,
+        dividendYieldPct: (q.trailingAnnualDividendYield || 0) * 100,
         marketCap: q.marketCap ? q.marketCap * qRate : null,
-        peRatio: (q.trailingPE as number | undefined) ?? null,
+        peRatio: q.trailingPE || null,
         revenue: fin.revenue,
         profit: fin.profit,
         liabilityAssetsRatio: fin.liabilityAssetsRatio,
         floatCap: fin.floatShares ? fin.floatShares * (price || 0) * qRate : null,
         pbRatio: fin.pbRatio,
         psRatio: fin.psRatio,
-        marketState: (q.marketState as string | undefined) ?? null,
+        marketState: q.marketState || null,
         currency: "USD",
-      };
-    }));
+      });
+    }
 
     cache.set(cacheKey, { ts: now, quotes });
     scheduleFinancialsLookups(symbols);
     res.json({ asOf: now, quotes });
   } catch (err) {
-    console.error("Failed to fetch Yahoo quotes", err);
-    res.status(502).json({ error: "Failed to fetch quotes" });
+    console.error("API Error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
