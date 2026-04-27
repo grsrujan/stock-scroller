@@ -3,6 +3,7 @@ import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
 import { ArrowUp, ArrowDown, Search, LayoutGrid } from "lucide-react";
 import { Link } from "wouter";
+import { SectorFilter } from "@/components/SectorFilter";
 
 function formatMarketCap(n: number | null): string {
   if (n === null || isNaN(n)) return "—";
@@ -31,11 +32,12 @@ export default function WatchlistPage() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<keyof StockQuote>("marketCap");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set());
 
   const stockMap = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, { name: string; sector: string }>();
     if (Array.isArray(TOP_100_STOCKS)) {
-      TOP_100_STOCKS.forEach((s) => map.set(s.symbol.toUpperCase(), s.name));
+      TOP_100_STOCKS.forEach((s) => map.set(s.symbol.toUpperCase(), { name: s.name, sector: s.sector }));
     }
     return map;
   }, []);
@@ -75,21 +77,30 @@ export default function WatchlistPage() {
     };
     load();
     const id = setInterval(load, 45000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
+    return () => { cancelled = true; clearInterval(id); };
   }, [symbols]);
 
   const sorted = useMemo(() => {
     let list = [...quotes];
+    
+    // Filter by Search
     if (search) {
       const q = search.toUpperCase();
       list = list.filter((s) => 
         s.symbol.toUpperCase().includes(q) || 
-        (stockMap.get(s.symbol) || "").toUpperCase().includes(q)
+        (stockMap.get(s.symbol)?.name || "").toUpperCase().includes(q)
       );
     }
+
+    // Filter by Sector
+    if (selectedSectors.size > 0) {
+      list = list.filter((s) => {
+        const sector = stockMap.get(s.symbol)?.sector || "Other";
+        return selectedSectors.has(sector);
+      });
+    }
+
+    // Sort
     return list.sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
@@ -99,7 +110,12 @@ export default function WatchlistPage() {
       const res = av > bv ? 1 : -1;
       return sortOrder === "asc" ? res : -res;
     });
-  }, [quotes, search, sortKey, sortOrder, stockMap]);
+  }, [quotes, search, sortKey, sortOrder, stockMap, selectedSectors]);
+
+  const hasCustom = useMemo(() => {
+    const raw = localStorage.getItem("custom-stocks");
+    return !!(raw && JSON.parse(raw).length > 0);
+  }, []);
 
   return (
     <div className="watchlist-page">
@@ -122,6 +138,12 @@ export default function WatchlistPage() {
           />
         </div>
       </header>
+
+      <SectorFilter 
+        active={selectedSectors} 
+        onChange={setSelectedSectors} 
+        hasCustom={hasCustom}
+      />
 
       <div className="table-container">
         {loading && quotes.length === 0 ? (
@@ -157,7 +179,7 @@ export default function WatchlistPage() {
                   <td className="sym-cell">
                     <div className="sym-info">
                       <span className="sym-ticker">{q.symbol}</span>
-                      <span className="sym-name">{stockMap.get(q.symbol) || "Stock"}</span>
+                      <span className="sym-name">{stockMap.get(q.symbol)?.name || "Stock"}</span>
                     </div>
                   </td>
                   <td className="price-cell">${formatVal(q.price)}</td>

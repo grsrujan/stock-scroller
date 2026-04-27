@@ -45,6 +45,13 @@ export function MarketHeader({ screen, screens }: Props) {
             <span className="brand-name">WATCHLIST</span>
           </div>
         </Link>
+        <div className="v-divider" />
+        <Link href="/heatmap">
+          <div className={`brand-link ${location === "/heatmap" ? "active" : ""}`}>
+            <Activity size={14} />
+            <span className="brand-name">HEATMAP</span>
+          </div>
+        </Link>
       </div>
 
       <div className="brand-meta">

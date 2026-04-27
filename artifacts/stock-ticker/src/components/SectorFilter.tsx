@@ -10,6 +10,7 @@ const SECTOR_ORDER = [
   "Materials",
   "Real Estate",
   "Utilities",
+  "ETFs",
   "Custom",
 ];
 
@@ -25,6 +26,7 @@ const SECTOR_COLORS: Record<string, string> = {
   "Materials": "#c39bff",
   "Real Estate": "#ff9bb3",
   "Utilities": "#6ec1e4",
+  "ETFs": "#FFD700",
   "Custom": "#e0e0e0",
 };
 
@@ -40,6 +42,7 @@ const SHORT: Record<string, string> = {
   "Materials": "Mat",
   "Real Estate": "REIT",
   "Utilities": "Util",
+  "ETFs": "ETF",
   "Custom": "Custom",
 };
 
