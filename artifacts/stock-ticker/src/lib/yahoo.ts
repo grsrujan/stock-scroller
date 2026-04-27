@@ -10,11 +10,9 @@ export type ApiQuote = {
   peRatio: number | null;
   revenue: number | null;
   profit: number | null;
-  liabilityAssetsRatio: number | null;
   floatCap: number | null;
   pbRatio: number | null;
   psRatio: number | null;
-  currency: string | null;
 };
 
 export type StockQuote = {
@@ -29,22 +27,19 @@ export type StockQuote = {
   peRatio: number | null;
   revenue: number | null;
   profit: number | null;
-  liabilityAssetsRatio: number | null;
   floatCap: number | null;
   pbRatio: number | null;
   psRatio: number | null;
-  currency: string | null;
 };
 
 export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
   if (symbols.length === 0) return [];
-  const CHUNK_SIZE = 40; // Smaller chunks for better stability
+  const CHUNK_SIZE = 40;
   const chunks: string[][] = [];
   for (let i = 0; i < symbols.length; i += CHUNK_SIZE) {
     chunks.push(symbols.slice(i, i + CHUNK_SIZE));
   }
 
-  // Use allSettled to ensure some data loads even if some chunks fail
   const results = await Promise.allSettled(
     chunks.map(async (batch) => {
       const resp = await fetch(`/api/quotes?symbols=${batch.join(",")}`);
@@ -58,8 +53,6 @@ export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
   for (const res of results) {
     if (res.status === "fulfilled") {
       flat.push(...res.value);
-    } else {
-      console.error("Watchlist chunk fetch error:", res.reason);
     }
   }
 
@@ -75,10 +68,8 @@ export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
     peRatio: q.peRatio,
     revenue: q.revenue,
     profit: q.profit,
-    liabilityAssetsRatio: q.liabilityAssetsRatio,
     floatCap: q.floatCap,
     pbRatio: q.pbRatio,
     psRatio: q.psRatio,
-    currency: q.currency,
   }));
 }

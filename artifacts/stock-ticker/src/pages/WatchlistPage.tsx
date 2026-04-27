@@ -114,7 +114,8 @@ export default function WatchlistPage() {
 
   const hasCustom = useMemo(() => {
     const raw = localStorage.getItem("custom-stocks");
-    return !!(raw && JSON.parse(raw).length > 0);
+    if (!raw) return false;
+    try { return JSON.parse(raw).length > 0; } catch { return false; }
   }, []);
 
   return (
@@ -171,31 +172,54 @@ export default function WatchlistPage() {
                 <th>P/B</th>
                 <th>P/E</th>
                 <th>P/S</th>
+                <th>52w Range</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((q) => (
-                <tr key={q.symbol}>
-                  <td className="sym-cell">
-                    <div className="sym-info">
-                      <span className="sym-ticker">{q.symbol}</span>
-                      <span className="sym-name">{stockMap.get(q.symbol)?.name || "Stock"}</span>
-                    </div>
-                  </td>
-                  <td className="price-cell">${formatVal(q.price)}</td>
-                  <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
-                    {formatPercent(q.changePct)}
-                  </td>
-                  <td>{formatMarketCap(q.marketCap)}</td>
-                  <td>{formatMarketCap(q.floatCap)}</td>
-                  <td>{formatMarketCap(q.revenue)}</td>
-                  <td>{formatMarketCap(q.profit)}</td>
-                  <td>{formatVal(q.dividendYieldPct)}%</td>
-                  <td>{formatVal(q.pbRatio)}</td>
-                  <td>{formatVal(q.peRatio)}</td>
-                  <td>{formatVal(q.psRatio)}</td>
-                </tr>
-              ))}
+              {sorted.map((q) => {
+                const rangeFrac = q.fiftyTwoLow != null && q.fiftyTwoHigh != null && q.fiftyTwoHigh > q.fiftyTwoLow
+                  ? (q.price - q.fiftyTwoLow) / (q.fiftyTwoHigh - q.fiftyTwoLow)
+                  : null;
+                
+                const nearLow = rangeFrac != null && rangeFrac <= 0.1;
+                const nearHigh = rangeFrac != null && rangeFrac >= 0.9;
+
+                return (
+                  <tr key={q.symbol} className={`${nearLow ? "near-low" : ""} ${nearHigh ? "near-high" : ""}`}>
+                    <td className="sym-cell">
+                      <div className="sym-info">
+                        <span className="sym-ticker">{q.symbol}</span>
+                        <span className="sym-name">{stockMap.get(q.symbol)?.name || "Stock"}</span>
+                      </div>
+                    </td>
+                    <td className="price-cell">${formatVal(q.price)}</td>
+                    <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
+                      {formatPercent(q.changePct)}
+                    </td>
+                    <td>{formatMarketCap(q.marketCap)}</td>
+                    <td>{formatMarketCap(q.floatCap)}</td>
+                    <td>{formatMarketCap(q.revenue)}</td>
+                    <td>{formatMarketCap(q.profit)}</td>
+                    <td>{formatVal(q.dividendYieldPct)}%</td>
+                    <td>{formatVal(q.pbRatio)}</td>
+                    <td>{formatVal(q.peRatio)}</td>
+                    <td>{formatVal(q.psRatio)}</td>
+                    <td>
+                      <div className="range-col-cell">
+                        <div className="range-vals">
+                          <span>{formatVal(q.fiftyTwoLow)}</span>
+                          <span>{formatVal(q.fiftyTwoHigh)}</span>
+                        </div>
+                        <div className="range-bar mini">
+                          {rangeFrac != null && (
+                            <div className="range-marker" style={{ left: `${Math.min(100, Math.max(0, rangeFrac * 100))}%` }} />
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

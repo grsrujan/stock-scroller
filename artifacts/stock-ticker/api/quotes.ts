@@ -10,6 +10,8 @@ type CachedQuote = {
   price: number | null;
   change: number | null;
   changePercent: number | null;
+  fiftyTwoHigh: number | null;
+  fiftyTwoLow: number | null;
   marketCap: number | null;
   peRatio: number | null;
   revenue: number | null;
@@ -20,7 +22,6 @@ type CachedQuote = {
   dividendYieldPct: number | null;
 };
 
-const cache = new Map<string, { ts: number; quotes: CachedQuote[] }>();
 const financialsCache = new Map<string, any>();
 const fxCache = new Map<string, number>();
 
@@ -65,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const raw = String(req.query["symbols"] || "").trim();
     if (!raw) return res.status(400).json({ error: "No symbols" });
-    const symbols = raw.split(",").map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 100); // Smaller batches for safety
+    const symbols = raw.split(",").map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 100);
 
     const results = await yahooFinance.quote(symbols, {}, { validateResult: false });
     const quotes = await Promise.all(results.map(async (q) => {
@@ -77,6 +78,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         price: price * rate,
         change: (q.regularMarketChange || 0) * rate,
         changePercent: q.regularMarketChangePercent || 0,
+        fiftyTwoHigh: (q.fiftyTwoWeekHigh || 0) * rate,
+        fiftyTwoLow: (q.fiftyTwoWeekLow || 0) * rate,
         marketCap: (q.marketCap || 0) * rate,
         peRatio: q.trailingPE || null,
         dividendYieldPct: (q.trailingAnnualDividendYield || 0) * 100,
