@@ -30,6 +30,7 @@ function formatVal(v: any): string {
 export default function WatchlistPage() {
   const [quotes, setQuotes] = useState<StockQuote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("marketCap");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [search, setSearch] = useState("");
@@ -53,15 +54,23 @@ export default function WatchlistPage() {
       try {
         const data = await fetchAllQuotes(symbols);
         if (!cancelled) {
-          setQuotes(data);
+          if (data.length === 0 && symbols.length > 0) {
+            setError("Failed to fetch any data. Please check your connection or try again later.");
+          } else {
+            setQuotes(data);
+            setError(null);
+          }
           setLoading(false);
         }
       } catch (err) {
-        console.error(err);
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "An unknown error occurred");
+          setLoading(false);
+        }
       }
     };
     fetch();
-    const id = setInterval(fetch, 30000);
+    const id = setInterval(fetch, 60000); // 1 minute refresh for large list
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -72,7 +81,7 @@ export default function WatchlistPage() {
     let list = [...quotes];
     if (search) {
       const q = search.toUpperCase();
-      list = list.filter((s) => s.symbol.includes(q));
+      list = list.filter((s) => s.symbol.includes(q) || (stockMap.get(s.symbol) || "").toUpperCase().includes(q));
     }
     return list.sort((a, b) => {
       const av = a[sortKey];
@@ -83,7 +92,7 @@ export default function WatchlistPage() {
       const res = av > bv ? 1 : -1;
       return sortOrder === "asc" ? res : -res;
     });
-  }, [quotes, sortKey, sortOrder, search]);
+  }, [quotes, sortKey, sortOrder, search, stockMap]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -121,7 +130,7 @@ export default function WatchlistPage() {
           <Search size={16} className="muted" />
           <input
             type="text"
-            placeholder="Search symbols..."
+            placeholder="Search symbols or names..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -129,10 +138,18 @@ export default function WatchlistPage() {
       </header>
 
       <div className="table-container">
-        {loading ? (
-          <div className="loading-state">Fetching market data for {symbols.length} stocks...</div>
-        ) : sorted.length === 0 ? (
-          <div className="loading-state">No data available. The API might be temporarily unavailable.</div>
+        {loading && quotes.length === 0 ? (
+          <div className="loading-state">
+            <div className="spinner" />
+            <p>Loading market data for {symbols.length} stocks...</p>
+          </div>
+        ) : error ? (
+          <div className="loading-state error">
+            <p>⚠️ {error}</p>
+            <button onClick={() => window.location.reload()} className="retry-btn">Retry</button>
+          </div>
+        ) : sorted.length === 0 && search ? (
+          <div className="loading-state">No stocks match your search.</div>
         ) : (
           <table className="watchlist-table">
             <thead>
