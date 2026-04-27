@@ -38,22 +38,31 @@ export type StockQuote = {
 
 export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
   if (symbols.length === 0) return [];
-  const CHUNK_SIZE = 50;
+  const CHUNK_SIZE = 40; // Smaller chunks for better stability
   const chunks: string[][] = [];
   for (let i = 0; i < symbols.length; i += CHUNK_SIZE) {
     chunks.push(symbols.slice(i, i + CHUNK_SIZE));
   }
 
-  const results = await Promise.all(
+  // Use allSettled to ensure some data loads even if some chunks fail
+  const results = await Promise.allSettled(
     chunks.map(async (batch) => {
       const resp = await fetch(`/api/quotes?symbols=${batch.join(",")}`);
-      if (!resp.ok) throw new Error("Failed to fetch quotes");
+      if (!resp.ok) throw new Error(`Chunk failed: ${resp.status}`);
       const data = await resp.json();
       return data.quotes as ApiQuote[];
     }),
   );
 
-  const flat = results.flat();
+  const flat: ApiQuote[] = [];
+  for (const res of results) {
+    if (res.status === "fulfilled") {
+      flat.push(...res.value);
+    } else {
+      console.error("Watchlist chunk fetch error:", res.reason);
+    }
+  }
+
   return flat.map((q) => ({
     symbol: q.symbol,
     price: q.price ?? 0,

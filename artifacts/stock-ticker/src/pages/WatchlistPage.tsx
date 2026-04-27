@@ -130,7 +130,9 @@ export default function WatchlistPage() {
 
       <div className="table-container">
         {loading ? (
-          <div className="loading-state">Fetching market data...</div>
+          <div className="loading-state">Fetching market data for {symbols.length} stocks...</div>
+        ) : sorted.length === 0 ? (
+          <div className="loading-state">No data available. The API might be temporarily unavailable.</div>
         ) : (
           <table className="watchlist-table">
             <thead>

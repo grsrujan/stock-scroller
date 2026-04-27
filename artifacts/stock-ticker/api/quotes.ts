@@ -222,7 +222,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const missingFin = symbols.filter(s => !financialsCache.has(s) && !finInFlight.has(s));
     if (missingFin.length > 0) {
-      const toSync = missingFin.slice(0, 5);
+      // Very conservative synchronous fetch to stay under Vercel's 10s limit
+      const toSync = missingFin.slice(0, 3);
       toSync.forEach(sym => finInFlight.add(sym));
       await Promise.all(toSync.map(async (sym) => {
         await fetchFinancialsFor(sym);
