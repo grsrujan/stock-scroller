@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { ArrowUp, ArrowDown, Search, ArrowLeftRight, LayoutGrid, List } from "lucide-react";
+import { ArrowUp, ArrowDown, Search, LayoutGrid } from "lucide-react";
 import { Link } from "wouter";
 
 type SortKey = keyof StockQuote;
@@ -33,6 +33,12 @@ export default function WatchlistPage() {
   const [sortKey, setSortKey] = useState<SortKey>("marketCap");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [search, setSearch] = useState("");
+
+  const stockMap = useMemo(() => {
+    const map = new Map<string, string>();
+    TOP_100_STOCKS.forEach((s) => map.set(s.symbol.toUpperCase(), s.name));
+    return map;
+  }, []);
 
   const symbols = useMemo(() => {
     const builtIn = TOP_100_STOCKS.map((s) => s.symbol);
@@ -145,8 +151,15 @@ export default function WatchlistPage() {
             <tbody>
               {sorted.map((q) => (
                 <tr key={q.symbol}>
-                  <td className="sym-cell">{q.symbol}</td>
-                  <td className="price-cell">${q.price.toFixed(2)}</td>
+                  <td className="sym-cell">
+                    <div className="sym-info">
+                      <span className="sym-ticker">{q.symbol}</span>
+                      <span className="sym-name">{stockMap.get(q.symbol) || "Unknown"}</span>
+                    </div>
+                  </td>
+                  <td className="price-cell">
+                    ${q.price.toFixed(2)}
+                  </td>
                   <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
                     {formatPercent(q.changePct)}
                   </td>

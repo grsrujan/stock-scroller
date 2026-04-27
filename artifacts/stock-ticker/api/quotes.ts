@@ -16,7 +16,6 @@ type CachedQuote = {
   peRatio: number | null;
   revenue: number | null;
   profit: number | null;
-  // New metrics for watchlist
   liabilityAssetsRatio: number | null;
   floatCap: number | null;
   pbRatio: number | null;
@@ -44,13 +43,35 @@ type Financials = {
   floatShares: number | null;
   pbRatio: number | null;
   psRatio: number | null;
+  currency: string | null;
 };
 
 const financialsCache = new Map<string, { fin: Financials; ts: number }>();
+const fxCache = new Map<string, { rate: number; ts: number }>();
+const fxInFlight = new Set<string>();
+
 const finInFlight = new Set<string>();
 const finQueue: string[] = [];
 let finActive = 0;
 const FIN_MAX_CONCURRENT = 10;
+
+async function getFxRate(from: string): Promise<number> {
+  const to = "USD";
+  if (from === to) return 1.0;
+  const key = `${from}${to}=X`;
+  
+  const cached = fxCache.get(key);
+  if (cached && Date.now() - cached.ts < 3600_000) return cached.rate;
+
+  try {
+    const q = await yahooFinance.quote(key);
+    const rate = q.regularMarketPrice || 1.0;
+    fxCache.set(key, { rate, ts: Date.now() });
+    return rate;
+  } catch {
+    return 1.0;
+  }
+}
 
 function pumpFinQueue() {
   while (finActive < FIN_MAX_CONCURRENT && finQueue.length > 0) {
@@ -78,31 +99,36 @@ async function fetchFinancialsFor(symbol: string): Promise<void> {
     const ks = summary.defaultKeyStatistics || {};
     const sd = summary.summaryDetail || {};
 
+    const currency = fd.financialCurrency || "USD";
+    let rate = 1.0;
+    if (currency !== "USD") {
+      rate = await getFxRate(currency);
+    }
+
+    const convert = (val: any) => (typeof val === "number" ? val * rate : null);
+
     // Liability/Assets Ratio
     let laRatio = null;
-    const totalAssets = fd.totalAssets; // Note: yahoo-finance2 might not provide this directly in financialData for all stocks
+    const totalAssets = fd.totalAssets;
     const totalLiabilities = fd.totalLiabilities;
     if (typeof totalAssets === "number" && typeof totalLiabilities === "number" && totalAssets > 0) {
       laRatio = totalLiabilities / totalAssets;
-    } else if (typeof fd.debtToEquity === "number") {
-      // Fallback: use debtToEquity to estimate or just provide debtToEquity if LA is missing
-      // For simplicity, if we can't get LA, we'll try to calculate from other fields if possible
     }
 
     const fin: Financials = {
-      revenue: typeof fd.totalRevenue === "number" ? fd.totalRevenue : null,
-      profit: typeof ks.netIncomeToCommon === "number" ? ks.netIncomeToCommon : null,
+      revenue: convert(fd.totalRevenue),
+      profit: convert(ks.netIncomeToCommon),
       liabilityAssetsRatio: laRatio,
       floatShares: typeof ks.floatShares === "number" ? ks.floatShares : null,
       pbRatio: typeof ks.priceToBook === "number" ? ks.priceToBook : null,
       psRatio: typeof ks.priceToSalesTrailing12Months === "number" ? ks.priceToSalesTrailing12Months : (typeof sd.priceToSalesTrailing12Months === "number" ? sd.priceToSalesTrailing12Months : null),
+      currency: "USD", // We've converted them
     };
 
     financialsCache.set(symbol, { fin, ts: Date.now() });
   } catch (err) {
-    console.error(`Fin fetch failed for ${symbol}`, err);
     financialsCache.set(symbol, {
-      fin: { revenue: null, profit: null, liabilityAssetsRatio: null, floatShares: null, pbRatio: null, psRatio: null },
+      fin: { revenue: null, profit: null, liabilityAssetsRatio: null, floatShares: null, pbRatio: null, psRatio: null, currency: "USD" },
       ts: Date.now() - FIN_TTL_MS + FIN_RETRY_MS,
     });
   }
@@ -127,6 +153,7 @@ const EMPTY_FIN: Financials = {
   floatShares: null,
   pbRatio: null,
   psRatio: null,
+  currency: "USD",
 };
 
 function getFinancials(sym: string): Financials {
@@ -156,18 +183,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const now = Date.now();
 
   if (cached && now - cached.ts < CACHE_TTL_MS) {
-    const patched = cached.quotes.map((q) => {
+    const patched = await Promise.all(cached.quotes.map(async (q) => {
       const fin = getFinancials(q.symbol);
+      let quoteRate = 1.0;
+      if (q.currency && q.currency !== "USD") {
+        quoteRate = await getFxRate(q.currency);
+      }
       return {
         ...q,
+        price: q.price ? q.price * quoteRate : null,
+        change: q.change ? q.change * quoteRate : null,
+        fiftyTwoHigh: q.fiftyTwoHigh ? q.fiftyTwoHigh * quoteRate : null,
+        fiftyTwoLow: q.fiftyTwoLow ? q.fiftyTwoLow * quoteRate : null,
         revenue: fin.revenue ?? q.revenue,
         profit: fin.profit ?? q.profit,
-        liabilityAssetsRatio: fin.liabilityAssetsRatio ?? q.liabilityAssetsRatio,
-        floatCap: fin.floatShares ? fin.floatShares * (q.price || 0) : q.floatCap,
-        pbRatio: fin.pbRatio ?? q.pbRatio,
-        psRatio: fin.psRatio ?? q.psRatio,
+        floatCap: fin.floatShares ? fin.floatShares * (q.price || 0) * quoteRate : q.floatCap,
+        marketCap: q.marketCap ? q.marketCap * quoteRate : null,
+        currency: "USD",
       };
-    });
+    }));
     scheduleFinancialsLookups(symbols);
     res.json({ asOf: cached.ts, quotes: patched });
     return;
@@ -188,7 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const missingFin = symbols.filter(s => !financialsCache.has(s) && !finInFlight.has(s));
     if (missingFin.length > 0) {
-      const toSync = missingFin.slice(0, 10);
+      const toSync = missingFin.slice(0, 5);
       toSync.forEach(sym => finInFlight.add(sym));
       await Promise.all(toSync.map(async (sym) => {
         await fetchFinancialsFor(sym);
@@ -196,31 +230,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }));
     }
 
-    const quotes: CachedQuote[] = symbols.map((sym) => {
+    const quotes: CachedQuote[] = await Promise.all(symbols.map(async (sym) => {
       const q = bySymbol.get(sym);
       const fin = getFinancials(sym);
 
-      if (!q) {
-        return {
-          symbol: sym,
-          price: null,
-          change: null,
-          changePercent: null,
-          fiftyTwoHigh: null,
-          fiftyTwoLow: null,
-          dividendYieldPct: null,
-          marketCap: null,
-          peRatio: null,
-          revenue: fin.revenue,
-          profit: fin.profit,
-          liabilityAssetsRatio: fin.liabilityAssetsRatio,
-          floatCap: null,
-          pbRatio: fin.pbRatio,
-          psRatio: fin.psRatio,
-          marketState: null,
-          currency: null,
-        };
-      }
+      if (!q) return { symbol: sym, price: null, currency: "USD", ...fin };
+
+      const quoteCurrency = q.currency || "USD";
+      const qRate = await getFxRate(quoteCurrency);
 
       const price =
         (q.regularMarketPrice as number | undefined) ??
@@ -241,34 +258,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       return {
         symbol: sym,
-        price,
-        change,
+        price: price ? price * qRate : null,
+        change: change ? change * qRate : null,
         changePercent,
-        fiftyTwoHigh: (q.fiftyTwoWeekHigh as number | undefined) ?? null,
-        fiftyTwoLow: (q.fiftyTwoWeekLow as number | undefined) ?? null,
+        fiftyTwoHigh: q.fiftyTwoWeekHigh ? q.fiftyTwoWeekHigh * qRate : null,
+        fiftyTwoLow: q.fiftyTwoWeekLow ? q.fiftyTwoWeekLow * qRate : null,
         dividendYieldPct,
-        marketCap: (q.marketCap as number | undefined) ?? null,
+        marketCap: q.marketCap ? q.marketCap * qRate : null,
         peRatio: (q.trailingPE as number | undefined) ?? null,
         revenue: fin.revenue,
         profit: fin.profit,
         liabilityAssetsRatio: fin.liabilityAssetsRatio,
-        floatCap: fin.floatShares ? fin.floatShares * (price || 0) : null,
+        floatCap: fin.floatShares ? fin.floatShares * (price || 0) * qRate : null,
         pbRatio: fin.pbRatio,
         psRatio: fin.psRatio,
         marketState: (q.marketState as string | undefined) ?? null,
-        currency: (q.currency as string | undefined) ?? null,
+        currency: "USD",
       };
-    });
+    }));
 
     cache.set(cacheKey, { ts: now, quotes });
     scheduleFinancialsLookups(symbols);
     res.json({ asOf: now, quotes });
   } catch (err) {
     console.error("Failed to fetch Yahoo quotes", err);
-    if (cached) {
-      res.json({ asOf: cached.ts, quotes: cached.quotes, stale: true });
-      return;
-    }
     res.status(502).json({ error: "Failed to fetch quotes" });
   }
 }
