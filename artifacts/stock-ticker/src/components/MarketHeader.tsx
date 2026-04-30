@@ -35,7 +35,7 @@ export function MarketHeader({ screen, screens }: Props) {
         <Link href="/">
           <div className={`brand-link ${location === "/" ? "active" : ""}`}>
             <LayoutGrid size={14} />
-            <span className="brand-name">STOCK SCROLLER</span>
+            <span className="brand-name">SCROLLER</span>
           </div>
         </Link>
         <div className="v-divider" />
