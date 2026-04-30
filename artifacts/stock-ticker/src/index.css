@@ -1356,6 +1356,55 @@ body {
   border-bottom: 1px solid #333;
 }
 
+.sector-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sector-avg {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sector-avg.pos {
+  background: rgba(0, 200, 5, 0.2);
+  color: #00c805;
+}
+
+.sector-avg.neg {
+  background: rgba(255, 46, 46, 0.2);
+  color: #ff2e2e;
+}
+
+.tile-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.tile-price {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+.tile-mcap {
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  opacity: 0.6;
+  font-weight: 700;
+}
+
+.search-match {
+  box-shadow: 0 0 0 2px #fff, 0 0 15px rgba(255,255,255,0.5);
+  z-index: 10;
+}
+
 .sector-title {
   font-family: var(--font-mono);
   font-size: 11px;

@@ -72,29 +72,28 @@ export default function HeatmapPage() {
     return "#ff2e2e";
   };
 
-  // Improved weighting for a denser treemap look
   const getTileStyles = (s: HeatmapStock) => {
     const mcap = s.marketCap || 0;
-    let width = 60;
-    let height = 50;
-    let fontSize = 10;
+    let width = 70;
+    let height = 60;
+    let fontSize = 11;
 
-    if (mcap > 2e12) { // Apple, Microsoft, NVIDIA
-      width = 160;
-      height = 120;
-      fontSize = 16;
+    if (mcap > 2e12) {
+      width = 170;
+      height = 140;
+      fontSize = 18;
     } else if (mcap > 1e12) {
-      width = 130;
-      height = 100;
-      fontSize = 14;
+      width = 140;
+      height = 110;
+      fontSize = 15;
     } else if (mcap > 5e11) {
-      width = 100;
-      height = 80;
-      fontSize = 12;
+      width = 110;
+      height = 90;
+      fontSize = 13;
     } else if (mcap > 2e11) {
-      width = 80;
-      height = 65;
-      fontSize = 11;
+      width = 90;
+      height = 75;
+      fontSize = 12;
     }
 
     return {
@@ -104,6 +103,13 @@ export default function HeatmapPage() {
       flexGrow: Math.max(1, Math.floor(mcap / 1e10)),
       fontSize: `${fontSize}px`
     };
+  };
+
+  const formatPrice = (p: number) => p.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatMcap = (n: number) => {
+    if (n >= 1e12) return `${(n / 1e12).toFixed(1)}T`;
+    if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+    return `${(n / 1e6).toFixed(1)}M`;
   };
 
   return (
@@ -129,7 +135,7 @@ export default function HeatmapPage() {
           <Search size={16} className="muted" />
           <input
             type="text"
-            placeholder="Search sectors or stocks..."
+            placeholder="Search symbols or sectors..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -146,7 +152,7 @@ export default function HeatmapPage() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <p>Syncing market data...</p>
+            <p>Scanning markets...</p>
           </div>
         ) : (
           <div className="sectors-grid">
@@ -159,12 +165,18 @@ export default function HeatmapPage() {
               if (filtered.length === 0) return null;
 
               const sectorMcap = filtered.reduce((acc, s) => acc + (s.marketCap || 0), 0);
+              const sectorAvg = filtered.reduce((acc, s) => acc + s.changePct, 0) / filtered.length;
               const groupFlex = Math.max(1, Math.floor(sectorMcap / 5e11));
 
               return (
                 <div key={name} className="sector-group" style={{ flexGrow: groupFlex }}>
                   <div className="sector-header">
-                    <span className="sector-title">{name}</span>
+                    <div className="sector-meta">
+                      <span className="sector-title">{name}</span>
+                      <span className={`sector-avg ${sectorAvg >= 0 ? 'pos' : 'neg'}`}>
+                        {sectorAvg >= 0 ? '+' : ''}{sectorAvg.toFixed(2)}%
+                      </span>
+                    </div>
                     <span className="sector-count">{filtered.length} STOCKS</span>
                   </div>
                   <div className="tiles-container">
@@ -172,10 +184,13 @@ export default function HeatmapPage() {
                       .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
                       .map(s => {
                         const styles = getTileStyles(s);
+                        const showPrice = styles.height > 65;
+                        const showCap = styles.height > 85;
+
                         return (
                           <div 
                             key={s.symbol}
-                            className="stock-tile"
+                            className={`stock-tile ${search && s.symbol.includes(search.toUpperCase()) ? 'search-match' : ''}`}
                             style={styles}
                           >
                             <a 
@@ -187,7 +202,11 @@ export default function HeatmapPage() {
                             >
                               <span className="tile-symbol">{s.symbol}</span>
                             </a>
-                            <span className="tile-pct">{s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%</span>
+                            <div className="tile-metrics">
+                              <span className="tile-pct">{s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%</span>
+                              {showPrice && <span className="tile-price">${formatPrice(s.price)}</span>}
+                              {showCap && s.marketCap && <span className="tile-mcap">{formatMcap(s.marketCap)}</span>}
+                            </div>
                           </div>
                         );
                       })}
