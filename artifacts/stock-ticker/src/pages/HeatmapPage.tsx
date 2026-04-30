@@ -72,37 +72,23 @@ export default function HeatmapPage() {
     return "#ff2e2e";
   };
 
-  const getTileStyles = (s: HeatmapStock) => {
+  const getTileMetrics = (s: HeatmapStock) => {
     const mcap = s.marketCap || 0;
     let width = 70;
     let height = 60;
     let fontSize = 11;
 
     if (mcap > 2e12) {
-      width = 170;
-      height = 140;
-      fontSize = 18;
+      width = 170; height = 140; fontSize = 18;
     } else if (mcap > 1e12) {
-      width = 140;
-      height = 110;
-      fontSize = 15;
+      width = 140; height = 110; fontSize = 15;
     } else if (mcap > 5e11) {
-      width = 110;
-      height = 90;
-      fontSize = 13;
+      width = 110; height = 90; fontSize = 13;
     } else if (mcap > 2e11) {
-      width = 90;
-      height = 75;
-      fontSize = 12;
+      width = 90; height = 75; fontSize = 12;
     }
 
-    return {
-      backgroundColor: getColor(s.changePct),
-      width: `${width}px`,
-      height: `${height}px`,
-      flexGrow: Math.max(1, Math.floor(mcap / 1e10)),
-      fontSize: `${fontSize}px`
-    };
+    return { width, height, fontSize };
   };
 
   const formatPrice = (p: number) => p.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -183,22 +169,27 @@ export default function HeatmapPage() {
                     {filtered
                       .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
                       .map(s => {
-                        const styles = getTileStyles(s);
-                        const showPrice = styles.height > 65;
-                        const showCap = styles.height > 85;
+                        const dims = getTileMetrics(s);
+                        const showPrice = dims.height >= 50;
+                        const showCap = dims.height >= 70;
 
                         return (
                           <div 
                             key={s.symbol}
                             className={`stock-tile ${search && s.symbol.includes(search.toUpperCase()) ? 'search-match' : ''}`}
-                            style={styles}
+                            style={{
+                              backgroundColor: getColor(s.changePct),
+                              width: `${dims.width}px`,
+                              height: `${dims.height}px`,
+                              flexGrow: Math.max(1, Math.floor((s.marketCap || 0) / 1e10))
+                            }}
                           >
                             <a 
                               href={s.exchange ? `https://www.google.com/finance/beta/quote/${s.symbol}:${s.exchange}` : `https://www.google.com/finance/beta/quote/${s.symbol}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="symbol-link"
-                              style={{ fontSize: styles.fontSize }}
+                              style={{ fontSize: dims.fontSize }}
                             >
                               <span className="tile-symbol">{s.symbol}</span>
                             </a>
