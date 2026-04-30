@@ -1172,6 +1172,15 @@ body {
   background: rgba(255, 203, 58, 0.05);
 }
 
+.muted-sort {
+  opacity: 0.15;
+  transition: opacity 0.2s;
+}
+
+.sortable:hover .muted-sort {
+  opacity: 0.5;
+}
+
 .th-content {
   display: flex;
   align-items: center;
@@ -1276,4 +1285,112 @@ body {
 
 .retry-btn:hover {
   opacity: 0.9;
+}
+
+/* ===== Heatmap Page ===== */
+.heatmap-page {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  overflow: hidden;
+  color: #fff;
+}
+
+.heatmap-container {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  background: #050505;
+}
+
+.sectors-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-content: flex-start;
+}
+
+.sector-group {
+  display: flex;
+  flex-direction: column;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 4px;
+  padding: 8px;
+  flex: 1 1 300px; /* Allow groups to grow and wrap */
+  min-height: 200px;
+}
+
+.sector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #333;
+}
+
+.sector-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.sector-count {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #666;
+}
+
+.tiles-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  flex: 1;
+}
+
+.stock-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.stock-tile:hover {
+  transform: scale(1.02);
+  z-index: 5;
+  filter: brightness(1.2);
+}
+
+.tile-symbol {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 11px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.tile-pct {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+}
+
+@media (max-width: 768px) {
+  .sector-group {
+    flex: 1 1 100%;
+  }
 }

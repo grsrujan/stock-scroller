@@ -1,4 +1,4 @@
-import { Pause, Play, Maximize2, Gauge, Search, Plus, List } from "lucide-react";
+import { Pause, Play, Maximize2, Gauge, Search, Plus, List, Activity } from "lucide-react";
 import { Link } from "wouter";
 
 type Props = {
@@ -26,6 +26,21 @@ export function ControlBar({
 }: Props) {
   return (
     <div className="control-bar">
+      <div className="nav-group">
+        <Link href="/watchlist">
+          <button className="ctrl-btn" title="Watchlist">
+            <List className="ic" />
+          </button>
+        </Link>
+        <Link href="/heatmap">
+          <button className="ctrl-btn" title="Market Heatmap">
+            <Activity className="ic" />
+          </button>
+        </Link>
+      </div>
+
+      <div className="v-divider" />
+
       <button className="ctrl-btn" onClick={onTogglePause} aria-label="Play/Pause">
         {paused ? <Play className="ic" /> : <Pause className="ic" />}
       </button>

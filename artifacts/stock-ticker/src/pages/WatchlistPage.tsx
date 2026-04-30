@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { ArrowUp, ArrowDown, Search, LayoutGrid } from "lucide-react";
+import { ArrowUp, ArrowDown, Search, LayoutGrid, ChevronsUpDown, Activity } from "lucide-react";
 import { Link } from "wouter";
 import { SectorFilter } from "@/components/SectorFilter";
 
@@ -127,6 +127,11 @@ export default function WatchlistPage() {
             <span>SCROLLER</span>
           </Link>
           <div className="v-divider" />
+          <Link href="/heatmap" className="back-link">
+            <Activity size={18} />
+            <span>HEATMAP</span>
+          </Link>
+          <div className="v-divider" />
           <h1>WATCHLIST</h1>
         </div>
         <div className="watchlist-search">
@@ -161,17 +166,72 @@ export default function WatchlistPage() {
           <table className="watchlist-table">
             <thead>
               <tr>
-                <th onClick={() => { setSortKey("symbol"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Symbol</th>
-                <th onClick={() => { setSortKey("price"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Price</th>
-                <th onClick={() => { setSortKey("changePct"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>% Change</th>
-                <th onClick={() => { setSortKey("marketCap"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Market Cap</th>
-                <th onClick={() => { setSortKey("floatCap"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Float Cap</th>
-                <th onClick={() => { setSortKey("revenue"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Revenue</th>
-                <th onClick={() => { setSortKey("profit"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>Net Income</th>
-                <th>Div %</th>
-                <th>P/B</th>
-                <th>P/E</th>
-                <th>P/S</th>
+                <th className="sortable" onClick={() => { setSortKey("symbol"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Symbol</span>
+                    {sortKey === "symbol" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("price"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Price</span>
+                    {sortKey === "price" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("changePct"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>% Change</span>
+                    {sortKey === "changePct" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("marketCap"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Market Cap</span>
+                    {sortKey === "marketCap" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("floatCap"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Float Cap</span>
+                    {sortKey === "floatCap" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("revenue"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Revenue</span>
+                    {sortKey === "revenue" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("profit"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Net Income</span>
+                    {sortKey === "profit" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("dividendYieldPct"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Div %</span>
+                    {sortKey === "dividendYieldPct" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("pbRatio"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>P/B</span>
+                    {sortKey === "pbRatio" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("peRatio"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>P/E</span>
+                    {sortKey === "peRatio" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
+                <th className="sortable" onClick={() => { setSortKey("psRatio"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>P/S</span>
+                    {sortKey === "psRatio" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
                 <th>52w Range</th>
               </tr>
             </thead>

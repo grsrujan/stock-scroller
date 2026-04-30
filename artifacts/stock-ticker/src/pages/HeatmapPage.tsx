@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { Search, LayoutGrid } from "lucide-react";
+import { Search, LayoutGrid, List } from "lucide-react";
 import { Link } from "wouter";
 import { SectorFilter } from "@/components/SectorFilter";
 
@@ -44,20 +44,17 @@ export default function HeatmapPage() {
     quotes.forEach(q => {
       const info = stockInfo.get(q.symbol);
       if (info) {
-        // Filter by Sector Tags
         if (selectedSectors.size > 0) {
           const hasMatch = info.sectors.some(s => selectedSectors.has(s));
           if (!hasMatch) return;
         }
 
-        // Group by primary sector (first in list)
         const primary = info.sectors[0] || "Other";
         if (!map.has(primary)) map.set(primary, []);
         map.get(primary)!.push({ ...q, ...info });
       }
     });
 
-    // Sort sectors by total market cap
     return Array.from(map.entries()).sort((a, b) => {
       const sumA = a[1].reduce((acc, s) => acc + (s.marketCap || 0), 0);
       const sumB = b[1].reduce((acc, s) => acc + (s.marketCap || 0), 0);
@@ -66,19 +63,47 @@ export default function HeatmapPage() {
   }, [quotes, selectedSectors]);
 
   const getColor = (pct: number) => {
-    if (pct >= 3) return "#00c805"; // Bright Green
-    if (pct >= 1) return "#008a04"; // Med Green
-    if (pct > 0) return "#004d02";  // Dark Green
-    if (pct === 0) return "#1a1a1a"; // Neutral
-    if (pct >= -1) return "#4d0000"; // Dark Red
-    if (pct >= -3) return "#8a0000"; // Med Red
-    return "#ff2e2e"; // Bright Red
+    if (pct >= 3) return "#00c805";
+    if (pct >= 1) return "#008a04";
+    if (pct > 0) return "#004d02";
+    if (pct === 0) return "#1a1a1a";
+    if (pct >= -1) return "#4d0000";
+    if (pct >= -3) return "#8a0000";
+    return "#ff2e2e";
   };
 
-  const getWeight = (cap: number | null) => {
-    if (!cap) return 1;
-    // Log scale for weights to keep boxes readable
-    return Math.max(1, Math.log10(cap / 1e6) * 10);
+  // Improved weighting for a denser treemap look
+  const getTileStyles = (s: HeatmapStock) => {
+    const mcap = s.marketCap || 0;
+    let width = 60;
+    let height = 50;
+    let fontSize = 10;
+
+    if (mcap > 2e12) { // Apple, Microsoft, NVIDIA
+      width = 160;
+      height = 120;
+      fontSize = 16;
+    } else if (mcap > 1e12) {
+      width = 130;
+      height = 100;
+      fontSize = 14;
+    } else if (mcap > 5e11) {
+      width = 100;
+      height = 80;
+      fontSize = 12;
+    } else if (mcap > 2e11) {
+      width = 80;
+      height = 65;
+      fontSize = 11;
+    }
+
+    return {
+      backgroundColor: getColor(s.changePct),
+      width: `${width}px`,
+      height: `${height}px`,
+      flexGrow: Math.max(1, Math.floor(mcap / 1e10)),
+      fontSize: `${fontSize}px`
+    };
   };
 
   return (
@@ -88,6 +113,11 @@ export default function HeatmapPage() {
           <Link href="/" className="back-link">
             <LayoutGrid size={18} />
             <span>SCROLLER</span>
+          </Link>
+          <div className="v-divider" />
+          <Link href="/watchlist" className="back-link">
+            <List size={18} />
+            <span>WATCHLIST</span>
           </Link>
           <div className="v-divider" />
           <h1>MARKET SENTIMENT</h1>
@@ -113,7 +143,7 @@ export default function HeatmapPage() {
         {loading ? (
           <div className="loading-state">
             <div className="spinner" />
-            <p>Generating Heatmap for {symbols.length} stocks...</p>
+            <p>Syncing market data...</p>
           </div>
         ) : (
           <div className="sectors-grid">
@@ -125,8 +155,11 @@ export default function HeatmapPage() {
               );
               if (filtered.length === 0) return null;
 
+              const sectorMcap = filtered.reduce((acc, s) => acc + (s.marketCap || 0), 0);
+              const groupFlex = Math.max(1, Math.floor(sectorMcap / 5e11));
+
               return (
-                <div key={name} className="sector-group">
+                <div key={name} className="sector-group" style={{ flexGrow: groupFlex }}>
                   <div className="sector-header">
                     <span className="sector-title">{name}</span>
                     <span className="sector-count">{filtered.length} STOCKS</span>
@@ -134,21 +167,19 @@ export default function HeatmapPage() {
                   <div className="tiles-container">
                     {filtered
                       .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
-                      .map(s => (
-                        <div 
-                          key={s.symbol}
-                          className="stock-tile"
-                          style={{
-                            backgroundColor: getColor(s.changePct),
-                            flexGrow: getWeight(s.marketCap),
-                            minWidth: s.marketCap && s.marketCap > 1e11 ? '80px' : '40px',
-                            minHeight: s.marketCap && s.marketCap > 1e11 ? '60px' : '40px',
-                          }}
-                        >
-                          <span className="tile-symbol">{s.symbol}</span>
-                          <span className="tile-pct">{s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%</span>
-                        </div>
-                      ))}
+                      .map(s => {
+                        const styles = getTileStyles(s);
+                        return (
+                          <div 
+                            key={s.symbol}
+                            className="stock-tile"
+                            style={styles}
+                          >
+                            <span className="tile-symbol" style={{ fontSize: styles.fontSize }}>{s.symbol}</span>
+                            <span className="tile-pct">{s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%</span>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               );
