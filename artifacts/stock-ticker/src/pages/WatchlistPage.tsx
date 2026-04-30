@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { ArrowUp, ArrowDown, Search, LayoutGrid, ChevronsUpDown, Activity, ExternalLink } from "lucide-react";
+import { ArrowUp, ArrowDown, Search, LayoutGrid, ChevronsUpDown, Activity, ExternalLink, List } from "lucide-react";
 import { Link } from "wouter";
 import { SectorFilter } from "@/components/SectorFilter";
 
