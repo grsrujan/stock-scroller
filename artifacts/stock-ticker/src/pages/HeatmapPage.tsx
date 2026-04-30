@@ -75,7 +75,7 @@ export default function HeatmapPage() {
   const getTileMetrics = (s: HeatmapStock) => {
     const mcap = s.marketCap || 0;
     let width = 70;
-    let height = 60;
+    let height = 55;
     let fontSize = 11;
 
     if (mcap > 2e12) {
@@ -170,8 +170,8 @@ export default function HeatmapPage() {
                       .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
                       .map(s => {
                         const dims = getTileMetrics(s);
-                        const showPrice = dims.height >= 50;
-                        const showCap = dims.height >= 70;
+                        // All tiles with at least 50px height show price and cap
+                        const showMetrics = dims.height >= 50;
 
                         return (
                           <div 
@@ -193,11 +193,15 @@ export default function HeatmapPage() {
                             >
                               <span className="tile-symbol">{s.symbol}</span>
                             </a>
-                            <div className="tile-metrics">
-                              <span className="tile-pct">{s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%</span>
-                              {showPrice && <span className="tile-price">${formatPrice(s.price)}</span>}
-                              {showCap && s.marketCap && <span className="tile-mcap">{formatMcap(s.marketCap)}</span>}
-                            </div>
+                            {showMetrics && (
+                              <div className="tile-metrics">
+                                <div className="tile-price-line">
+                                  <span className="tile-price">${formatPrice(s.price)}</span>
+                                  <span className="tile-pct">({s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%)</span>
+                                </div>
+                                {s.marketCap && <span className="tile-mcap">{formatMcap(s.marketCap)}</span>}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
