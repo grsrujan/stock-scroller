@@ -380,7 +380,6 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
             onClick={(e) => e.stopPropagation()}
           >
             <div className="symbol">{quote.symbol}</div>
-            <ExternalLink size={10} className="ext-icon" />
           </a>
           {quote.sectors.map(sec => {
              const sCol = sectorColor(sec);

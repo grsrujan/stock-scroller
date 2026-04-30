@@ -173,18 +173,22 @@ export default function HeatmapPage() {
                       .map(s => {
                         const styles = getTileStyles(s);
                         return (
-                          <a 
+                          <div 
                             key={s.symbol}
-                            href={s.exchange ? `https://www.google.com/finance/beta/quote/${s.symbol}:${s.exchange}` : `https://www.google.com/finance/beta/quote/${s.symbol}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="stock-tile"
                             style={styles}
                           >
-                            <span className="tile-symbol" style={{ fontSize: styles.fontSize }}>{s.symbol}</span>
+                            <a 
+                              href={s.exchange ? `https://www.google.com/finance/beta/quote/${s.symbol}:${s.exchange}` : `https://www.google.com/finance/beta/quote/${s.symbol}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="symbol-link"
+                              style={{ fontSize: styles.fontSize }}
+                            >
+                              <span className="tile-symbol">{s.symbol}</span>
+                            </a>
                             <span className="tile-pct">{s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%</span>
-                            <ExternalLink size={10} className="ext-icon" />
-                          </a>
+                          </div>
                         );
                       })}
                   </div>

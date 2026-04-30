@@ -256,18 +256,17 @@ export default function WatchlistPage() {
                           ? `https://www.google.com/finance/beta/quote/${q.symbol}:${q.exchange}`
                           : `https://www.google.com/finance/beta/quote/${q.symbol}`;
                         return (
+                          <div className="sym-info">
                           <a 
                             href={financeUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="watchlist-sym-link"
                           >
-                            <div className="sym-info">
-                              <span className="sym-ticker">{q.symbol}</span>
-                              <span className="sym-name">{info?.name || "Stock"}</span>
-                            </div>
-                            <ExternalLink size={12} className="ext-icon" />
+                            <span className="sym-ticker">{q.symbol}</span>
                           </a>
+                          <span className="sym-name">{info?.name || "Stock"}</span>
+                        </div>
                         );
                       })()}
                     </td>
