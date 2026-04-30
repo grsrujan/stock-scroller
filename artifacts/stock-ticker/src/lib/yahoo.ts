@@ -13,6 +13,7 @@ export type ApiQuote = {
   floatCap: number | null;
   pbRatio: number | null;
   psRatio: number | null;
+  exchange: string | null;
 };
 
 export type StockQuote = {
@@ -30,6 +31,7 @@ export type StockQuote = {
   floatCap: number | null;
   pbRatio: number | null;
   psRatio: number | null;
+  exchange: string | null;
 };
 
 export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
@@ -71,5 +73,6 @@ export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
     floatCap: q.floatCap,
     pbRatio: q.pbRatio,
     psRatio: q.psRatio,
+    exchange: q.exchange,
   }));
 }

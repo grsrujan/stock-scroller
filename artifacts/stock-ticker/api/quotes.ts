@@ -20,6 +20,7 @@ type CachedQuote = {
   pbRatio: number | null;
   psRatio: number | null;
   dividendYieldPct: number | null;
+  exchange: string | null;
 };
 
 const financialsCache = new Map<string, any>();
@@ -77,6 +78,14 @@ async function fetchFin(symbol: string) {
   }
 }
 
+function cleanExchange(ex: string): string {
+  if (!ex) return "";
+  const upper = ex.toUpperCase();
+  if (upper.includes("NAS") || upper === "NGM" || upper === "NMS") return "NASDAQ";
+  if (upper.includes("NYS") || upper === "NYQ") return "NYSE";
+  return upper;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const raw = String(req.query["symbols"] || "").trim();
@@ -92,22 +101,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const price = q.regularMarketPrice || q.postMarketPrice || q.preMarketPrice || 0;
       const mcapUsd = (q.marketCap || 0) * tradeRate;
       
-      // Handle yield conversion (Yahoo provides some as decimals 0.02 and some as percentages 2.0)
+      // Handle yield conversion
       let yieldPct = fin.dividendYield;
       if (yieldPct === null) {
         yieldPct = q.trailingAnnualDividendYield || 0;
       }
-      // If yield is small (like 0.05), it's likely a decimal ratio. If > 0.5, it might be a percentage already.
-      // But 0.5% is a valid yield. Usually, 'dividendYield' module returns decimal.
-      if (yieldPct > 0 && yieldPct < 0.2) {
-         yieldPct *= 100;
-      } else if (yieldPct >= 0.2 && yieldPct < 1.0) {
-         // Ambiguous range (0.2% to 1%). Most Yahoo fields are decimals.
+      if (yieldPct > 0 && yieldPct < 1.0) {
          yieldPct *= 100;
       }
 
       return {
         symbol: q.symbol,
+        exchange: cleanExchange(q.fullExchangeName || q.exchange || ""),
         price: price * tradeRate,
         change: (q.regularMarketChange || 0) * tradeRate,
         changePercent: q.regularMarketChangePercent || 0,
@@ -118,7 +123,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         dividendYieldPct: yieldPct,
         revenue: fin.revenue,
         profit: fin.profit,
-        // Float Cap is derived from the verified Market Cap USD * the float ratio
         floatCap: mcapUsd * fin.floatRatio,
         pbRatio: fin.pbRatio,
         psRatio: fin.psRatio,

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { ArrowUp, ArrowDown, Search, LayoutGrid, ChevronsUpDown, Activity } from "lucide-react";
+import { ArrowUp, ArrowDown, Search, LayoutGrid, ChevronsUpDown, Activity, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { SectorFilter } from "@/components/SectorFilter";
 
@@ -250,18 +250,26 @@ export default function WatchlistPage() {
                 return (
                   <tr key={q.symbol} className={`${nearLow ? "near-low" : ""} ${nearHigh ? "near-high" : ""}`}>
                     <td className="sym-cell">
-                      <a 
-                        href={`https://www.google.com/finance/quote/${q.symbol}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="watchlist-sym-link"
-                      >
-                        <div className="sym-info">
-                          <span className="sym-ticker">{q.symbol}</span>
-                          <span className="sym-name">{stockMap.get(q.symbol)?.name || "Stock"}</span>
-                        </div>
-                        <ExternalLink size={12} className="ext-icon" />
-                      </a>
+                      {(() => {
+                        const info = stockMap.get(q.symbol.toUpperCase());
+                        const financeUrl = q.exchange 
+                          ? `https://www.google.com/finance/beta/quote/${q.symbol}:${q.exchange}`
+                          : `https://www.google.com/finance/beta/quote/${q.symbol}`;
+                        return (
+                          <a 
+                            href={financeUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="watchlist-sym-link"
+                          >
+                            <div className="sym-info">
+                              <span className="sym-ticker">{q.symbol}</span>
+                              <span className="sym-name">{info?.name || "Stock"}</span>
+                            </div>
+                            <ExternalLink size={12} className="ext-icon" />
+                          </a>
+                        );
+                      })()}
                     </td>
                     <td className="price-cell">${formatVal(q.price)}</td>
                     <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>

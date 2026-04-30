@@ -19,6 +19,7 @@ type LiveQuote = {
   profit: number | null;
   flash: "up" | "down" | "none";
   flashKey: number;
+  exchange: string | null;
 };
 
 const SECTOR_COLORS: Record<string, string> = {
@@ -68,6 +69,7 @@ function placeholderQuotes(stocks: Stock[]): LiveQuote[] {
     profit: null,
     flash: "none",
     flashKey: 0,
+    exchange: null,
   }));
 }
 
@@ -102,6 +104,7 @@ function mergeQuotes(
       profit: a?.profit ?? p?.profit ?? null,
       flash: p && dir !== "none" ? dir : "none",
       flashKey: (p?.flashKey ?? 0) + (dir !== "none" ? 1 : 0),
+      exchange: a?.exchange ?? p?.exchange ?? null,
     };
   });
 }
@@ -356,6 +359,11 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
   const nearLow = rangeFrac != null && rangeFrac <= 0.1;
   const nearHigh = rangeFrac != null && rangeFrac >= 0.9;
 
+  // Build the specific Google Finance URL format requested
+  const financeUrl = quote.exchange 
+    ? `https://www.google.com/finance/beta/quote/${quote.symbol}:${quote.exchange}`
+    : `https://www.google.com/finance/beta/quote/${quote.symbol}`;
+
   return (
     <div
       data-symbol={quote.symbol}
@@ -365,7 +373,7 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
       <div className="row-left">
         <div className="row-head">
           <a 
-            href={`https://www.google.com/finance/quote/${quote.symbol}`} 
+            href={financeUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className="symbol-link"

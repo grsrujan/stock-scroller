@@ -175,7 +175,7 @@ export default function HeatmapPage() {
                         return (
                           <a 
                             key={s.symbol}
-                            href={`https://www.google.com/finance/quote/${s.symbol}`}
+                            href={s.exchange ? `https://www.google.com/finance/beta/quote/${s.symbol}:${s.exchange}` : `https://www.google.com/finance/beta/quote/${s.symbol}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="stock-tile"
