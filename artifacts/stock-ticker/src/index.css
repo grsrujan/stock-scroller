@@ -1098,6 +1098,12 @@ body {
   opacity: 1;
 }
 
+.back-link.active {
+  opacity: 1;
+  color: var(--color-accent);
+  pointer-events: none;
+}
+
 .v-divider {
   width: 1px;
   height: 20px;
@@ -1285,6 +1291,38 @@ body {
 
 .retry-btn:hover {
   opacity: 0.9;
+}
+
+/* Link Styles */
+.symbol-link, .watchlist-sym-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+
+.symbol-link:hover, .watchlist-sym-link:hover {
+  opacity: 0.8;
+}
+
+.ext-icon {
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: var(--color-accent);
+}
+
+.symbol-link:hover .ext-icon, 
+.watchlist-sym-link:hover .ext-icon,
+.stock-tile:hover .ext-icon {
+  opacity: 0.8;
+}
+
+.stock-tile .ext-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
 }
 
 /* ===== Heatmap Page ===== */

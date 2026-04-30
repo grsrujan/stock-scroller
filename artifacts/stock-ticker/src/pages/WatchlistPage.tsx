@@ -127,12 +127,15 @@ export default function WatchlistPage() {
             <span>SCROLLER</span>
           </Link>
           <div className="v-divider" />
+          <Link href="/watchlist" className="back-link active">
+            <List size={18} />
+            <span>WATCHLIST</span>
+          </Link>
+          <div className="v-divider" />
           <Link href="/heatmap" className="back-link">
             <Activity size={18} />
             <span>HEATMAP</span>
           </Link>
-          <div className="v-divider" />
-          <h1>WATCHLIST</h1>
         </div>
         <div className="watchlist-search">
           <Search size={16} className="muted" />
@@ -247,10 +250,18 @@ export default function WatchlistPage() {
                 return (
                   <tr key={q.symbol} className={`${nearLow ? "near-low" : ""} ${nearHigh ? "near-high" : ""}`}>
                     <td className="sym-cell">
-                      <div className="sym-info">
-                        <span className="sym-ticker">{q.symbol}</span>
-                        <span className="sym-name">{stockMap.get(q.symbol)?.name || "Stock"}</span>
-                      </div>
+                      <a 
+                        href={`https://www.google.com/finance/quote/${q.symbol}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="watchlist-sym-link"
+                      >
+                        <div className="sym-info">
+                          <span className="sym-ticker">{q.symbol}</span>
+                          <span className="sym-name">{stockMap.get(q.symbol)?.name || "Stock"}</span>
+                        </div>
+                        <ExternalLink size={12} className="ext-icon" />
+                      </a>
                     </td>
                     <td className="price-cell">${formatVal(q.price)}</td>
                     <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>

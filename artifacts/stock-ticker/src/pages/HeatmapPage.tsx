@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { Search, LayoutGrid, List } from "lucide-react";
+import { Search, LayoutGrid, List, ExternalLink, Activity } from "lucide-react";
 import { Link } from "wouter";
 import { SectorFilter } from "@/components/SectorFilter";
 
@@ -120,7 +120,10 @@ export default function HeatmapPage() {
             <span>WATCHLIST</span>
           </Link>
           <div className="v-divider" />
-          <h1>MARKET SENTIMENT</h1>
+          <Link href="/heatmap" className="back-link active">
+            <Activity size={18} />
+            <span>HEATMAP</span>
+          </Link>
         </div>
         <div className="watchlist-search">
           <Search size={16} className="muted" />
@@ -170,14 +173,18 @@ export default function HeatmapPage() {
                       .map(s => {
                         const styles = getTileStyles(s);
                         return (
-                          <div 
+                          <a 
                             key={s.symbol}
+                            href={`https://www.google.com/finance/quote/${s.symbol}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="stock-tile"
                             style={styles}
                           >
                             <span className="tile-symbol" style={{ fontSize: styles.fontSize }}>{s.symbol}</span>
                             <span className="tile-pct">{s.changePct >= 0 ? '+' : ''}{s.changePct.toFixed(1)}%</span>
-                          </div>
+                            <ExternalLink size={10} className="ext-icon" />
+                          </a>
                         );
                       })}
                   </div>

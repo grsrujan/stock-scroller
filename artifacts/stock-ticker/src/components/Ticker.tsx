@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus, ExternalLink } from "lucide-react";
 import { TOP_100_STOCKS, type Stock } from "@/data/stocks";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 
@@ -364,7 +364,16 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
     >
       <div className="row-left">
         <div className="row-head">
-          <div className="symbol">{quote.symbol}</div>
+          <a 
+            href={`https://www.google.com/finance/quote/${quote.symbol}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="symbol-link"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="symbol">{quote.symbol}</div>
+            <ExternalLink size={10} className="ext-icon" />
+          </a>
           {quote.sectors.map(sec => {
              const sCol = sectorColor(sec);
              return (
