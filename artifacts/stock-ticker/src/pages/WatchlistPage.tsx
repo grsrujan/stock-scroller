@@ -35,9 +35,9 @@ export default function WatchlistPage() {
   const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set());
 
   const stockMap = useMemo(() => {
-    const map = new Map<string, { name: string; sector: string }>();
+    const map = new Map<string, { name: string; sectors: string[] }>();
     if (Array.isArray(TOP_100_STOCKS)) {
-      TOP_100_STOCKS.forEach((s) => map.set(s.symbol.toUpperCase(), { name: s.name, sector: s.sector }));
+      TOP_100_STOCKS.forEach((s) => map.set(s.symbol.toUpperCase(), { name: s.name, sectors: s.sectors }));
     }
     return map;
   }, []);
@@ -95,8 +95,8 @@ export default function WatchlistPage() {
     // Filter by Sector
     if (selectedSectors.size > 0) {
       list = list.filter((s) => {
-        const sector = stockMap.get(s.symbol)?.sector || "Other";
-        return selectedSectors.has(sector);
+        const sectors = stockMap.get(s.symbol)?.sectors || ["Other"];
+        return sectors.some(sec => selectedSectors.has(sec));
       });
     }
 

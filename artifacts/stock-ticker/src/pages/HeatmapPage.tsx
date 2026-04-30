@@ -1,15 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { Search, LayoutGrid, List, Activity } from "lucide-react";
+import { Search, LayoutGrid } from "lucide-react";
 import { Link } from "wouter";
+import { SectorFilter } from "@/components/SectorFilter";
 
-type HeatmapStock = StockQuote & { name: string; sector: string };
+type HeatmapStock = StockQuote & { name: string; sectors: string[] };
 
 export default function HeatmapPage() {
   const [quotes, setQuotes] = useState<StockQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set());
 
   const symbols = useMemo(() => {
     const builtIn = TOP_100_STOCKS.map((s) => s.symbol);
@@ -34,16 +36,24 @@ export default function HeatmapPage() {
     return () => { cancelled = true; clearInterval(id); };
   }, [symbols]);
 
-  const sectors = useMemo(() => {
+  const groupedSectors = useMemo(() => {
     const map = new Map<string, HeatmapStock[]>();
-    const stockInfo = new Map<string, { name: string; sector: string }>();
-    TOP_100_STOCKS.forEach(s => stockInfo.set(s.symbol, { name: s.name, sector: s.sector }));
+    const stockInfo = new Map<string, { name: string; sectors: string[] }>();
+    TOP_100_STOCKS.forEach(s => stockInfo.set(s.symbol, { name: s.name, sectors: s.sectors }));
 
     quotes.forEach(q => {
       const info = stockInfo.get(q.symbol);
       if (info) {
-        if (!map.has(info.sector)) map.set(info.sector, []);
-        map.get(info.sector)!.push({ ...q, ...info });
+        // Filter by Sector Tags
+        if (selectedSectors.size > 0) {
+          const hasMatch = info.sectors.some(s => selectedSectors.has(s));
+          if (!hasMatch) return;
+        }
+
+        // Group by primary sector (first in list)
+        const primary = info.sectors[0] || "Other";
+        if (!map.has(primary)) map.set(primary, []);
+        map.get(primary)!.push({ ...q, ...info });
       }
     });
 
@@ -53,7 +63,7 @@ export default function HeatmapPage() {
       const sumB = b[1].reduce((acc, s) => acc + (s.marketCap || 0), 0);
       return sumB - sumA;
     });
-  }, [quotes]);
+  }, [quotes, selectedSectors]);
 
   const getColor = (pct: number) => {
     if (pct >= 3) return "#00c805"; // Bright Green
@@ -93,6 +103,12 @@ export default function HeatmapPage() {
         </div>
       </header>
 
+      <SectorFilter 
+        active={selectedSectors} 
+        onChange={setSelectedSectors} 
+        hasCustom={false}
+      />
+
       <div className="heatmap-container">
         {loading ? (
           <div className="loading-state">
@@ -101,7 +117,7 @@ export default function HeatmapPage() {
           </div>
         ) : (
           <div className="sectors-grid">
-            {sectors.map(([name, stocks]) => {
+            {groupedSectors.map(([name, stocks]) => {
               const filtered = stocks.filter(s => 
                 s.symbol.includes(search.toUpperCase()) || 
                 s.name.toUpperCase().includes(search.toUpperCase()) ||

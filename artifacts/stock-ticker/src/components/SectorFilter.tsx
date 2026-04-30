@@ -1,5 +1,8 @@
 const SECTOR_ORDER = [
   "Technology",
+  "Semiconductors",
+  "Cybersecurity",
+  "China",
   "Communication Services",
   "Consumer Discretionary",
   "Consumer Staples",
@@ -16,6 +19,9 @@ const SECTOR_ORDER = [
 
 const SECTOR_COLORS: Record<string, string> = {
   "Technology": "#4cc9f0",
+  "Semiconductors": "#00f5d4",
+  "Cybersecurity": "#f15bb5",
+  "China": "#fee440",
   "Communication Services": "#7b8cff",
   "Consumer Discretionary": "#ff7ac6",
   "Consumer Staples": "#9be36b",
@@ -32,6 +38,9 @@ const SECTOR_COLORS: Record<string, string> = {
 
 const SHORT: Record<string, string> = {
   "Technology": "Tech",
+  "Semiconductors": "Semi",
+  "Cybersecurity": "Cyber",
+  "China": "China",
   "Communication Services": "Comm",
   "Consumer Discretionary": "Disc",
   "Consumer Staples": "Staple",

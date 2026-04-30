@@ -6,7 +6,7 @@ import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 type LiveQuote = {
   symbol: string;
   name: string;
-  sector: string;
+  sectors: string[];
   price: number;
   prevPrice: number;
   changePct: number;
@@ -23,6 +23,9 @@ type LiveQuote = {
 
 const SECTOR_COLORS: Record<string, string> = {
   "Technology": "#4cc9f0",
+  "Semiconductors": "#00f5d4",
+  "Cybersecurity": "#f15bb5",
+  "China": "#fee440",
   "Communication Services": "#7b8cff",
   "Consumer Discretionary": "#ff7ac6",
   "Consumer Staples": "#9be36b",
@@ -33,6 +36,7 @@ const SECTOR_COLORS: Record<string, string> = {
   "Materials": "#c39bff",
   "Real Estate": "#ff9bb3",
   "Utilities": "#6ec1e4",
+  "ETFs": "#FFD700",
   "Custom": "#e0e0e0",
 };
 
@@ -51,7 +55,7 @@ function placeholderQuotes(stocks: Stock[]): LiveQuote[] {
   return stocks.map((s) => ({
     symbol: s.symbol,
     name: s.name,
-    sector: s.sector,
+    sectors: s.sectors,
     price: s.basePrice,
     prevPrice: s.basePrice,
     changePct: 0,
@@ -84,7 +88,7 @@ function mergeQuotes(
     return {
       symbol: s.symbol,
       name: s.name,
-      sector: s.sector,
+      sectors: s.sectors,
       price: nextPrice,
       prevPrice,
       changePct: a?.changePct ?? p?.changePct ?? 0,
@@ -124,6 +128,9 @@ type TickerProps = {
 
 const SECTOR_ORDER = [
   "Technology",
+  "Semiconductors",
+  "Cybersecurity",
+  "China",
   "Communication Services",
   "Consumer Discretionary",
   "Consumer Staples",
@@ -134,16 +141,9 @@ const SECTOR_ORDER = [
   "Materials",
   "Real Estate",
   "Utilities",
+  "ETFs",
+  "Custom",
 ];
-
-const STOCKS_BY_SECTOR: Stock[] = [...TOP_100_STOCKS].sort((a, b) => {
-  const ai = SECTOR_ORDER.indexOf(a.sector);
-  const bi = SECTOR_ORDER.indexOf(b.sector);
-  const ax = ai === -1 ? 999 : ai;
-  const bx = bi === -1 ? 999 : bi;
-  if (ax !== bx) return ax - bx;
-  return a.symbol.localeCompare(b.symbol);
-});
 
 export function Ticker({ screens, screen, speed, paused, highlightSymbol, sectorFilter, customSymbols }: TickerProps) {
   const allStocks = useMemo<Stock[]>(() => {
@@ -152,27 +152,16 @@ export function Ticker({ screens, screen, speed, paused, highlightSymbol, sector
       const existing = new Set(builtIn.map((s) => s.symbol));
       for (const sym of customSymbols) {
         if (!existing.has(sym)) {
-          builtIn.push({ symbol: sym, name: sym, sector: "Custom", basePrice: 0 });
+          builtIn.push({ symbol: sym, name: sym, sectors: ["Custom"], basePrice: 0 });
         }
       }
     }
-    const order = [
-      "Technology",
-      "Communication Services",
-      "Consumer Discretionary",
-      "Consumer Staples",
-      "Health Care",
-      "Financials",
-      "Industrials",
-      "Energy",
-      "Materials",
-      "Real Estate",
-      "Utilities",
-      "Custom",
-    ];
     return builtIn.sort((a, b) => {
-      const ai = order.indexOf(a.sector);
-      const bi = order.indexOf(b.sector);
+      // Use the first sector for primary sorting/grouping
+      const sA = a.sectors[0] || "Other";
+      const sB = b.sectors[0] || "Other";
+      const ai = SECTOR_ORDER.indexOf(sA);
+      const bi = SECTOR_ORDER.indexOf(sB);
       const ax = ai === -1 ? 999 : ai;
       const bx = bi === -1 ? 999 : bi;
       if (ax !== bx) return ax - bx;
@@ -183,7 +172,7 @@ export function Ticker({ screens, screen, speed, paused, highlightSymbol, sector
   const slice = useMemo<Stock[]>(() => {
     let list = allStocks;
     if (sectorFilter && sectorFilter.size > 0) {
-      list = list.filter((s) => sectorFilter.has(s.sector));
+      list = list.filter((s) => s.sectors.some(sec => sectorFilter.has(sec)));
     }
     if (screens <= 1) return list;
     const total = list.length;
@@ -304,11 +293,12 @@ function renderRows(quotes: LiveQuote[], keyPrefix: string, highlightSymbol?: st
   const out: ReactNode[] = [];
   let lastSector = "";
   for (const q of quotes) {
-    if (q.sector !== lastSector) {
-      const sc = sectorColor(q.sector);
+    const primarySector = q.sectors[0] || "Other";
+    if (primarySector !== lastSector) {
+      const sc = sectorColor(primarySector);
       out.push(
         <div
-          key={`${keyPrefix}sec-${q.sector}`}
+          key={`${keyPrefix}sec-${primarySector}`}
           className="sector-divider"
           style={{
             background: `linear-gradient(90deg, ${sc}33, transparent)`,
@@ -316,10 +306,10 @@ function renderRows(quotes: LiveQuote[], keyPrefix: string, highlightSymbol?: st
             color: sc,
           }}
         >
-          {q.sector}
+          {primarySector}
         </div>,
       );
-      lastSector = q.sector;
+      lastSector = primarySector;
     }
     out.push(
       <Row
@@ -353,7 +343,8 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
         )
       : null;
 
-  const sc = sectorColor(quote.sector);
+  const primarySector = quote.sectors[0] || "Other";
+  const sc = sectorColor(primarySector);
 
   const rangeFrac =
     quote.fiftyTwoLow != null &&
@@ -374,13 +365,19 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
       <div className="row-left">
         <div className="row-head">
           <div className="symbol">{quote.symbol}</div>
-          <div
-            className="sector-pill"
-            style={{ color: sc, borderColor: `${sc}55`, background: `${sc}1a` }}
-            title={quote.sector}
-          >
-            {quote.sector}
-          </div>
+          {quote.sectors.map(sec => {
+             const sCol = sectorColor(sec);
+             return (
+              <div
+                key={sec}
+                className="sector-pill"
+                style={{ color: sCol, borderColor: `${sCol}55`, background: `${sCol}1a` }}
+                title={sec}
+              >
+                {sec}
+              </div>
+             );
+          })}
           {quote.dividendYieldPct != null && quote.dividendYieldPct > 0 && (
             <div className="div-pill" title="Trailing 12-mo dividend yield">
               DIV {quote.dividendYieldPct.toFixed(2)}%
