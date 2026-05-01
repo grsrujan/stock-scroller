@@ -256,25 +256,11 @@ export default function WatchlistPage() {
                           ? `https://www.google.com/finance/beta/quote/${q.symbol}:${q.exchange}`
                           : `https://www.google.com/finance/beta/quote/${q.symbol}`;
                         
-                        // Demo: Link the first stock to our internal Alpha Deep-Dive
-                        const isDemo = sorted[0].symbol === q.symbol;
-
                         return (
                           <div className="sym-info">
-                            {isDemo ? (
-                              <Link href={`/quote/${q.symbol}`} className="watchlist-sym-link">
-                                <span className="sym-ticker">{q.symbol}</span>
-                              </Link>
-                            ) : (
-                              <a 
-                                href={financeUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="watchlist-sym-link"
-                              >
-                                <span className="sym-ticker">{q.symbol}</span>
-                              </a>
-                            )}
+                            <Link href={`/quote/${q.symbol}`} className="watchlist-sym-link">
+                              <span className="sym-ticker">{q.symbol}</span>
+                            </Link>
                             <span className="sym-name">{info?.name || "Stock"}</span>
                           </div>
                         );
