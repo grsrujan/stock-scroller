@@ -2,6 +2,7 @@ import { Route, Switch } from "wouter";
 import TickerPage from "@/pages/TickerPage";
 import WatchlistPage from "@/pages/WatchlistPage";
 import HeatmapPage from "@/pages/HeatmapPage";
+import QuotePage from "@/pages/QuotePage";
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <Route path="/" component={TickerPage} />
       <Route path="/watchlist" component={WatchlistPage} />
       <Route path="/heatmap" component={HeatmapPage} />
+      <Route path="/quote/:symbol" component={QuotePage} />
       <Route>404 Not Found</Route>
     </Switch>
   );
