@@ -1,7 +1,18 @@
 import { useState, useMemo, useEffect } from "react";
 import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
-import { ArrowUp, ArrowDown, Search, LayoutGrid, ChevronsUpDown, Activity, ExternalLink, List } from "lucide-react";
+import { 
+  Search, 
+  ArrowUp, 
+  ArrowDown, 
+  ChevronsUpDown, 
+  LayoutGrid, 
+  List, 
+  Activity, 
+  Plus, 
+  Download,
+  Trash2 
+} from "lucide-react";
 import { Link } from "wouter";
 import { SectorFilter } from "@/components/SectorFilter";
 
@@ -118,6 +129,35 @@ export default function WatchlistPage() {
     try { return JSON.parse(raw).length > 0; } catch { return false; }
   }, []);
 
+  const downloadCSV = () => {
+    const headers = ["Symbol", "Name", "Price", "Change %", "Market Cap", "P/E Ratio", "Div Yield %", "P/B Ratio", "Float Cap"];
+    const rows = sorted.map(q => {
+      const info = stockMap.get(q.symbol.toUpperCase());
+      return [
+        q.symbol,
+        `"${info?.name || "Stock"}"`,
+        q.price.toFixed(2),
+        q.changePct.toFixed(2),
+        q.marketCap || 0,
+        q.peRatio || "",
+        q.dividendYieldPct || 0,
+        q.pbRatio || "",
+        q.floatCap || 0
+      ].join(",");
+    });
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `alpha-scan-watchlist-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="watchlist-page">
       <header className="watchlist-header">
@@ -137,14 +177,20 @@ export default function WatchlistPage() {
             <span>HEATMAP</span>
           </Link>
         </div>
-        <div className="watchlist-search">
-          <Search size={16} className="muted" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="watchlist-actions">
+          <div className="watchlist-search">
+            <Search size={16} className="muted" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <button className="export-btn" onClick={downloadCSV} title="Export to CSV">
+            <Download size={18} />
+            <span>EXPORT</span>
+          </button>
         </div>
       </header>
 
