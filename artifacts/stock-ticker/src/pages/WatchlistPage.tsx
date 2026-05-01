@@ -130,7 +130,7 @@ export default function WatchlistPage() {
   }, []);
 
   const downloadCSV = () => {
-    const headers = ["Symbol", "Name", "Price", "Change %", "Market Cap", "P/E Ratio", "Div Yield %", "P/B Ratio", "Float Cap"];
+    const headers = ["Symbol", "Name", "Price", "Change %", "Div Yield %", "Market Cap", "P/E Ratio", "P/B Ratio", "Float Cap"];
     const rows = sorted.map(q => {
       const info = stockMap.get(q.symbol.toUpperCase());
       return [
@@ -138,9 +138,9 @@ export default function WatchlistPage() {
         `"${info?.name || "Stock"}"`,
         q.price.toFixed(2),
         q.changePct.toFixed(2),
+        q.dividendYieldPct || 0,
         q.marketCap || 0,
         q.peRatio || "",
-        q.dividendYieldPct || 0,
         q.pbRatio || "",
         q.floatCap || 0
       ].join(",");
@@ -233,6 +233,12 @@ export default function WatchlistPage() {
                     {sortKey === "changePct" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
                   </div>
                 </th>
+                <th className="sortable" onClick={() => { setSortKey("dividendYieldPct"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
+                  <div className="th-content">
+                    <span>Div %</span>
+                    {sortKey === "dividendYieldPct" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
+                  </div>
+                </th>
                 <th className="sortable" onClick={() => { setSortKey("marketCap"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
                   <div className="th-content">
                     <span>Market Cap</span>
@@ -255,12 +261,6 @@ export default function WatchlistPage() {
                   <div className="th-content">
                     <span>Net Income</span>
                     {sortKey === "profit" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
-                  </div>
-                </th>
-                <th className="sortable" onClick={() => { setSortKey("dividendYieldPct"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
-                  <div className="th-content">
-                    <span>Div %</span>
-                    {sortKey === "dividendYieldPct" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
                   </div>
                 </th>
                 <th className="sortable" onClick={() => { setSortKey("pbRatio"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
@@ -321,11 +321,11 @@ export default function WatchlistPage() {
                     <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
                       {formatPercent(q.changePct)}
                     </td>
+                    <td>{formatVal(q.dividendYieldPct)}%</td>
                     <td>{formatMarketCap(q.marketCap)}</td>
                     <td>{formatMarketCap(q.floatCap)}</td>
                     <td>{formatMarketCap(q.revenue)}</td>
                     <td>{formatMarketCap(q.profit)}</td>
-                    <td>{formatVal(q.dividendYieldPct)}%</td>
                     <td>{formatVal(q.pbRatio)}</td>
                     <td>{formatVal(q.peRatio)}</td>
                     <td>{formatVal(q.psRatio)}</td>
