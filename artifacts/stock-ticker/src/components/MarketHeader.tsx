@@ -56,10 +56,6 @@ export function MarketHeader({ screen, screens }: Props) {
 
       <div className="brand-meta">
         <div className="status">
-          <span>LIVE MARKET DATA</span>
-        </div>
-        <div className="v-line" />
-        <div className="status">
           <Clock size={10} className="muted" />
           <span>{dateStr}</span>
           <span className="time">{timeStr}</span>

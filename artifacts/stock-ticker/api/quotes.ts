@@ -102,15 +102,41 @@ function cleanExchange(ex: string): string {
 
 function cleanSymbol(sym: string): string {
   if (!sym) return "";
-  // Strip Yahoo suffixes (e.g., AAPL.N -> AAPL, RY.TO -> RY, BP.L -> BP)
-  return sym.split(".")[0].toUpperCase();
+  const upper = sym.toUpperCase();
+  
+  // Special case: preserve Berkshire classes A and B
+  if (upper.startsWith("BRK.A") || upper.startsWith("BRK-A")) return "BRK.A";
+  if (upper.startsWith("BRK.B") || upper.startsWith("BRK-B")) return "BRK.B";
+
+  // Handle common class suffixes (.A, .B) for US stocks generally
+  const parts = upper.split(".");
+  if (parts.length > 1) {
+    const suffix = parts[1];
+    // List of noisy exchange suffixes to strip
+    const noisy = ["N", "O", "K", "TO", "L", "NS", "V", "AX", "SS", "SZ", "HK", "T", "F", "DE", "OL", "PA", "MI"];
+    if (noisy.includes(suffix)) {
+      return parts[0];
+    }
+    // If it's a single letter class (not in noisy list), keep it
+    if (suffix.length === 1) {
+      return upper;
+    }
+  }
+
+  // Strip anything after the first dot for general cleaning of exchange noise
+  // unless it's a known class format we want to keep.
+  return parts[0];
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const raw = String(req.query["symbols"] || "").trim();
     if (!raw) return res.status(400).json({ error: "No symbols" });
-    const symbols = raw.split(",").map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 100);
+    const symbols = raw.split(",")
+      .map(s => s.trim().toUpperCase())
+      .filter(Boolean)
+      .map(s => s.replace(/\.([A-Z])$/, "-$1")) // Convert BRK.A to BRK-A for Yahoo
+      .slice(0, 100);
 
     const results = await yahooFinance.quote(symbols, {}, { validateResult: false });
     
