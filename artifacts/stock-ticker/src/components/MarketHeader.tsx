@@ -56,7 +56,6 @@ export function MarketHeader({ screen, screens }: Props) {
 
       <div className="brand-meta">
         <div className="status">
-          <Activity size={10} className="text-up" />
           <span>LIVE MARKET DATA</span>
         </div>
         <div className="v-line" />
@@ -64,11 +63,6 @@ export function MarketHeader({ screen, screens }: Props) {
           <Clock size={10} className="muted" />
           <span>{dateStr}</span>
           <span className="time">{timeStr}</span>
-        </div>
-        <div className="v-line" />
-        <div className="status">
-          <Globe size={10} className="muted" />
-          <span>GLOBAL NY-LN-TK</span>
         </div>
         {screens > 1 && location === "/" && (
           <>
