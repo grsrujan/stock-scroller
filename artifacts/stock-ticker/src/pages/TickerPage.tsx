@@ -93,18 +93,6 @@ export default function TickerPage() {
 
       <MarketHeader screen={1} screens={screens} />
 
-      <ControlBar
-        paused={paused}
-        onTogglePause={() => setPaused(!paused)}
-        speed={speed}
-        onSpeedChange={setSpeed}
-        screens={screens}
-        onScreensChange={setScreens}
-        onFullscreen={toggleFullscreen}
-        onSearch={() => setSearchOpen(true)}
-        onCustomStocks={() => setCustomModalOpen(true)}
-      />
-
       <SectorFilter
         active={sectorFilter}
         onChange={setSectorFilter}
@@ -169,6 +157,18 @@ export default function TickerPage() {
           </>
         )}
       </main>
+
+      <ControlBar
+        paused={paused}
+        onTogglePause={() => setPaused(!paused)}
+        speed={speed}
+        onSpeedChange={setSpeed}
+        screens={screens}
+        onScreensChange={setScreens}
+        onFullscreen={toggleFullscreen}
+        onSearch={() => setSearchOpen(true)}
+        onCustomStocks={() => setCustomModalOpen(true)}
+      />
 
     </div>
   );

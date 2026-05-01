@@ -36,8 +36,9 @@ body {
   height: 100vh;
   width: 100vw;
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto auto 1fr;
   overflow: hidden;
+  padding-bottom: 32px;
 }
 
 .grid-bg {
@@ -643,16 +644,20 @@ body {
 
 /* ===== Control bar ===== */
 .control-bar {
-  position: relative;
-  z-index: 2;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 3px clamp(8px, 1vw, 14px);
-  border-bottom: 1px solid var(--color-border);
-  background: rgba(11, 15, 23, 0.7);
-  backdrop-filter: blur(6px);
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  padding: 4px 16px;
+  border-top: 1px solid var(--color-border);
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(8px);
+  height: 32px;
 }
 
 .ctrl-btn.text-btn {
@@ -1176,18 +1181,18 @@ body {
 }
 
 .watchlist-table {
-  width: 100%;
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-size: 12px;
   text-align: left;
+  margin-bottom: 40px;
 }
 
 .watchlist-table thead th {
   position: sticky;
   top: 0;
   background: var(--color-panel-2);
-  padding: 10px 8px;
+  padding: 10px 4px;
   color: var(--color-muted-foreground);
   font-weight: 700;
   text-transform: uppercase;
@@ -1222,7 +1227,7 @@ body {
 }
 
 .watchlist-table tbody td {
-  padding: 10px 8px;
+  padding: 10px 4px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-fg);
   font-variant-numeric: tabular-nums;
