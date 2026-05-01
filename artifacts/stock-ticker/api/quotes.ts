@@ -80,10 +80,30 @@ async function fetchFin(symbol: string) {
 
 function cleanExchange(ex: string): string {
   if (!ex) return "";
-  const upper = ex.toUpperCase();
-  if (upper.includes("NAS") || upper === "NGM" || upper === "NMS") return "NASDAQ";
-  if (upper.includes("NYS") || upper === "NYQ") return "NYSE";
-  return upper;
+  const u = ex.toUpperCase();
+  
+  // US MARKETS
+  if (u.includes("NAS") || u === "NGM" || u === "NMS" || u === "NMQ") return "NASDAQ";
+  if (u.includes("NYS") || u === "NYQ" || u === "ASE" || u === "AMEX") return "NYSE";
+  if (u.includes("ARCA")) return "NYSEARCA";
+  if (u.includes("OTC") || u === "PNK" || u === "OBB") return "OTCMKTS";
+  
+  // INTERNATIONAL MARKETS
+  if (u === "TOR" || u === "TSE" || u === "TSX") return "TSE"; // Toronto
+  if (u === "LSE" || u === "LON") return "LON"; // London
+  if (u === "BOM" || u === "NSE") return "NSE"; // India
+  if (u === "HKG" || u === "HKEX") return "HKG"; // Hong Kong
+  if (u === "TYO" || u === "TSEJ") return "TYO"; // Tokyo
+  if (u === "ASX") return "ASX"; // Australia
+  if (u === "FRA" || u === "GER") return "FRA"; // Frankfurt
+  
+  return u; // Return original if not mapped but cleaned
+}
+
+function cleanSymbol(sym: string): string {
+  if (!sym) return "";
+  // Strip Yahoo suffixes (e.g., AAPL.N -> AAPL, RY.TO -> RY, BP.L -> BP)
+  return sym.split(".")[0].toUpperCase();
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -111,7 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       return {
-        symbol: q.symbol,
+        symbol: cleanSymbol(q.symbol),
         exchange: cleanExchange(q.fullExchangeName || q.exchange || ""),
         price: price * tradeRate,
         change: (q.regularMarketChange || 0) * tradeRate,

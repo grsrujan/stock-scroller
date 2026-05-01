@@ -184,13 +184,15 @@ export default function HeatmapPage() {
                               flexGrow: Math.max(1, Math.floor((s.marketCap || 0) / 1e10))
                             }}
                           >
-                            <Link 
-                              href={`/quote/${s.symbol}`}
+                            <a 
+                              href={s.exchange ? `https://www.google.com/finance/beta/quote/${s.symbol}:${s.exchange}` : `https://www.google.com/finance/beta/quote/${s.symbol}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="symbol-link"
                               style={{ fontSize: dims.fontSize }}
                             >
                               <span className="tile-symbol">{s.symbol}</span>
-                            </Link>
+                            </a>
                             {showMetrics && (
                               <div className="tile-metrics">
                                 <div className="tile-price-line">

@@ -258,9 +258,14 @@ export default function WatchlistPage() {
                         
                         return (
                           <div className="sym-info">
-                            <Link href={`/quote/${q.symbol}`} className="watchlist-sym-link">
+                            <a 
+                              href={financeUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="watchlist-sym-link"
+                            >
                               <span className="sym-ticker">{q.symbol}</span>
-                            </Link>
+                            </a>
                             <span className="sym-name">{info?.name || "Stock"}</span>
                           </div>
                         );

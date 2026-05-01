@@ -372,13 +372,15 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
     >
       <div className="row-left">
         <div className="row-head">
-          <Link 
-            href={`/quote/${quote.symbol}`}
+          <a 
+            href={quote.exchange ? `https://www.google.com/finance/beta/quote/${quote.symbol}:${quote.exchange}` : `https://www.google.com/finance/beta/quote/${quote.symbol}`}
+            target="_blank" 
+            rel="noopener noreferrer"
             className="symbol-link"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="symbol">{quote.symbol}</div>
-          </Link>
+          </a>
           {quote.sectors.map(sec => {
              const sCol = sectorColor(sec);
              return (
