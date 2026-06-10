@@ -221,6 +221,7 @@ export default function WatchlistPage() {
                     {sortKey === "symbol" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
                   </div>
                 </th>
+                <th>52w Range</th>
                 <th className="sortable" onClick={() => { setSortKey("price"); setSortOrder(sortOrder === "asc" ? "desc" : "asc"); }}>
                   <div className="th-content">
                     <span>Price</span>
@@ -281,7 +282,6 @@ export default function WatchlistPage() {
                     {sortKey === "psRatio" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ChevronsUpDown size={12} className="muted-sort" />}
                   </div>
                 </th>
-                <th>52w Range</th>
               </tr>
             </thead>
             <tbody>
@@ -317,18 +317,6 @@ export default function WatchlistPage() {
                         );
                       })()}
                     </td>
-                    <td className="price-cell">${formatVal(q.price)}</td>
-                    <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
-                      {formatPercent(q.changePct)}
-                    </td>
-                    <td>{formatVal(q.dividendYieldPct)}%</td>
-                    <td>{formatMarketCap(q.marketCap)}</td>
-                    <td>{formatMarketCap(q.floatCap)}</td>
-                    <td>{formatMarketCap(q.revenue)}</td>
-                    <td>{formatMarketCap(q.profit)}</td>
-                    <td>{formatVal(q.pbRatio)}</td>
-                    <td>{formatVal(q.peRatio)}</td>
-                    <td>{formatVal(q.psRatio)}</td>
                     <td>
                       <div className="range-col-cell">
                         <div className="range-vals">
@@ -342,6 +330,18 @@ export default function WatchlistPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="price-cell">${formatVal(q.price)}</td>
+                    <td className={`change-cell ${q.changePct >= 0 ? "pos" : "neg"}`}>
+                      {formatPercent(q.changePct)}
+                    </td>
+                    <td>{formatVal(q.dividendYieldPct)}%</td>
+                    <td>{formatMarketCap(q.marketCap)}</td>
+                    <td>{formatMarketCap(q.floatCap)}</td>
+                    <td>{formatMarketCap(q.revenue)}</td>
+                    <td>{formatMarketCap(q.profit)}</td>
+                    <td>{formatVal(q.pbRatio)}</td>
+                    <td>{formatVal(q.peRatio)}</td>
+                    <td>{formatVal(q.psRatio)}</td>
                   </tr>
                 );
               })}

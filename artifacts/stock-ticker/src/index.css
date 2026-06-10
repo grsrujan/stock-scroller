@@ -1274,14 +1274,14 @@ body {
 .range-col-cell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 100px;
+  gap: 3px;
+  min-width: 80px;
 }
 
 .range-vals {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 8.5px;
   color: var(--color-muted-foreground);
   font-family: var(--font-mono);
 }
@@ -1291,8 +1291,8 @@ body {
 }
 
 .range-bar.mini .range-marker {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .loading-state.error {
