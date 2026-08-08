@@ -848,4 +848,5 @@ export const TOP_100_STOCKS: Stock[] = [
   { symbol: "BF-A", name: "Brown-Forman Corporation Class A", sectors: ["Consumer Staples"], basePrice: 45.0 },
   { symbol: "BF-B", name: "Brown-Forman Corporation Class B", sectors: ["Consumer Staples"], basePrice: 45.0 },
   { symbol: "RGA", name: "Reinsurance Group of America, Inc.", sectors: ["Financials"], basePrice: 200.0 },
+  { symbol: "CELH", name: "Celsius Holdings, Inc.", sectors: ["Consumer Staples"], basePrice: 35.0 },
 ];
