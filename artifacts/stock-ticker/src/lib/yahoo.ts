@@ -1,3 +1,5 @@
+import { TOP_100_STOCKS } from "@/data/stocks";
+
 export type ApiQuote = {
   symbol: string;
   price: number | null;
@@ -77,6 +79,10 @@ export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
   }));
 }
 
+const KNOWN_ETF_SYMBOLS = new Set<string>(
+  TOP_100_STOCKS.filter((s) => s.sectors.includes("ETFs")).map((s) => s.symbol.toUpperCase())
+);
+
 export function getFinanceUrl(symbol: string, exchange?: string | null): string {
   if (!symbol) return "#";
   const sym = symbol.trim().toUpperCase();
@@ -111,15 +117,32 @@ export function getFinanceUrl(symbol: string, exchange?: string | null): string 
     "XLF": "NYSEARCA",
     "XRT": "NYSEARCA",
     "VYM": "NYSEARCA",
+    "ERX": "NYSEARCA",
+    "GUSH": "NYSEARCA",
+    "SOXL": "NYSEARCA",
+    "SPXL": "NYSEARCA",
+    "UPRO": "NYSEARCA",
+    "SPXU": "NYSEARCA",
+    "DFEN": "NYSEARCA",
+    "NRGU": "NYSEARCA",
+    "YOLO": "NYSEARCA",
+    "MJ": "NYSEARCA",
+    "IBB": "NASDAQ",
+    "QDTE": "NASDAQ",
   };
 
   if (!ex && ETF_EXCHANGES[sym]) {
     ex = ETF_EXCHANGES[sym];
   }
 
-  // If exchange is generic NGM/NMS/NAS, map to NASDAQ; ARCA to NYSEARCA; NYQ to NYSE
+  // If symbol is an ETF and exchange is not specified, default to NYSEARCA on Google Finance
+  if (!ex && KNOWN_ETF_SYMBOLS.has(sym)) {
+    ex = "NYSEARCA";
+  }
+
+  // If exchange is generic NGM/NMS/NAS, map to NASDAQ; ARCA/PCX to NYSEARCA; NYQ to NYSE
   if (ex === "NGM" || ex === "NMS" || ex === "NAS") ex = "NASDAQ";
-  if (ex === "ARCA") ex = "NYSEARCA";
+  if (ex === "ARCA" || ex === "PCX") ex = "NYSEARCA";
   if (ex === "NYQ") ex = "NYSE";
 
   // Google Finance URL format: https://www.google.com/finance/quote/SYMBOL:EXCHANGE
@@ -129,5 +152,6 @@ export function getFinanceUrl(symbol: string, exchange?: string | null): string 
 
   return `https://www.google.com/finance/quote/${encodeURIComponent(sym)}`;
 }
+
 
 
