@@ -80,6 +80,54 @@ export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
 export function getFinanceUrl(symbol: string, exchange?: string | null): string {
   if (!symbol) return "#";
   const sym = symbol.trim().toUpperCase();
-  return `https://finance.yahoo.com/quote/${encodeURIComponent(sym)}`;
+  let ex = exchange ? exchange.trim().toUpperCase() : "";
+
+  // Known ETF exchange mappings for Google Finance
+  const ETF_EXCHANGES: Record<string, string> = {
+    "INDA": "NYSEARCA",
+    "VIXM": "NYSEARCA",
+    "SPY": "NYSEARCA",
+    "VOO": "NYSEARCA",
+    "IVV": "NYSEARCA",
+    "IWM": "NYSEARCA",
+    "QQQ": "NASDAQ",
+    "SCHD": "NYSEARCA",
+    "SCHG": "NYSEARCA",
+    "VUG": "NYSEARCA",
+    "VTI": "NYSEARCA",
+    "XBI": "NYSEARCA",
+    "SMH": "NASDAQ",
+    "CIBR": "NASDAQ",
+    "EEM": "NYSEARCA",
+    "TLT": "NASDAQ",
+    "JEPQ": "NASDAQ",
+    "JEPI": "NYSEARCA",
+    "DIA": "NYSEARCA",
+    "SPLG": "NYSEARCA",
+    "GDX": "NYSEARCA",
+    "ICLN": "NASDAQ",
+    "IDRV": "NYSEARCA",
+    "TAN": "NYSEARCA",
+    "XLF": "NYSEARCA",
+    "XRT": "NYSEARCA",
+    "VYM": "NYSEARCA",
+  };
+
+  if (!ex && ETF_EXCHANGES[sym]) {
+    ex = ETF_EXCHANGES[sym];
+  }
+
+  // If exchange is generic NGM/NMS/NAS, map to NASDAQ; ARCA to NYSEARCA; NYQ to NYSE
+  if (ex === "NGM" || ex === "NMS" || ex === "NAS") ex = "NASDAQ";
+  if (ex === "ARCA") ex = "NYSEARCA";
+  if (ex === "NYQ") ex = "NYSE";
+
+  // Google Finance URL format: https://www.google.com/finance/quote/SYMBOL:EXCHANGE
+  if (ex) {
+    return `https://www.google.com/finance/quote/${encodeURIComponent(sym)}:${encodeURIComponent(ex)}`;
+  }
+
+  return `https://www.google.com/finance/quote/${encodeURIComponent(sym)}`;
 }
+
 
