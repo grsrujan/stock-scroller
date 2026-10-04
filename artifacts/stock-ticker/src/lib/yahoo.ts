@@ -76,3 +76,10 @@ export async function fetchAllQuotes(symbols: string[]): Promise<StockQuote[]> {
     exchange: q.exchange,
   }));
 }
+
+export function getFinanceUrl(symbol: string, exchange?: string | null): string {
+  if (!symbol) return "#";
+  const sym = symbol.trim().toUpperCase();
+  return `https://finance.yahoo.com/quote/${encodeURIComponent(sym)}`;
+}
+

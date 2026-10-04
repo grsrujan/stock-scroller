@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
+import { fetchAllQuotes, getFinanceUrl, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
 import { 
   Search, 
@@ -322,9 +322,7 @@ export default function WatchlistPage() {
         <td className="sym-cell">
           {(() => {
             const info = stockMap.get(q.symbol.toUpperCase());
-            const financeUrl = q.exchange 
-              ? `https://www.google.com/finance/beta/quote/${q.symbol}:${q.exchange}`
-              : `https://www.google.com/finance/beta/quote/${q.symbol}`;
+            const financeUrl = getFinanceUrl(q.symbol, q.exchange);
             
             return (
               <div className="sym-info">

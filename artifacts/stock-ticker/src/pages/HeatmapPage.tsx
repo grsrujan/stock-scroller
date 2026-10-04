@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
+import { fetchAllQuotes, getFinanceUrl, type StockQuote } from "@/lib/yahoo";
 import { TOP_100_STOCKS } from "@/data/stocks";
 import { Search, LayoutGrid, List, ExternalLink, Activity } from "lucide-react";
 import { Link } from "wouter";
@@ -185,7 +185,7 @@ export default function HeatmapPage() {
                             }}
                           >
                             <a 
-                              href={s.exchange ? `https://www.google.com/finance/beta/quote/${s.symbol}:${s.exchange}` : `https://www.google.com/finance/beta/quote/${s.symbol}`}
+                              href={getFinanceUrl(s.symbol, s.exchange)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="symbol-link"

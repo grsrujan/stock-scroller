@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowDownRight, ArrowUpRight, Minus, ExternalLink } from "lucide-react";
 import { TOP_100_STOCKS, type Stock } from "@/data/stocks";
-import { fetchAllQuotes, type StockQuote } from "@/lib/yahoo";
+import { fetchAllQuotes, getFinanceUrl, type StockQuote } from "@/lib/yahoo";
 
 type LiveQuote = {
   symbol: string;
@@ -359,10 +359,7 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
   const nearLow = rangeFrac != null && rangeFrac <= 0.1;
   const nearHigh = rangeFrac != null && rangeFrac >= 0.9;
 
-  // Build the specific Google Finance URL format requested
-  const financeUrl = quote.exchange 
-    ? `https://www.google.com/finance/beta/quote/${quote.symbol}:${quote.exchange}`
-    : `https://www.google.com/finance/beta/quote/${quote.symbol}`;
+  const financeUrl = getFinanceUrl(quote.symbol, quote.exchange);
 
   return (
     <div
@@ -373,7 +370,7 @@ function Row({ quote, highlighted }: { quote: LiveQuote; highlighted?: boolean }
       <div className="row-left">
         <div className="row-head">
           <a 
-            href={quote.exchange ? `https://www.google.com/finance/beta/quote/${quote.symbol}:${quote.exchange}` : `https://www.google.com/finance/beta/quote/${quote.symbol}`}
+            href={financeUrl}
             target="_blank" 
             rel="noopener noreferrer"
             className="symbol-link"
