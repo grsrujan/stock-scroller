@@ -134,8 +134,6 @@ export default function WatchlistPage() {
   const [sortKey, setSortKey] = useState<keyof StockQuote | "fiftyTwoRange">("marketCap");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set());
-  const [selectedColors, setSelectedColors] = useState<Set<ColorTierKey>>(new Set());
-  const [groupByColor, setGroupByColor] = useState(false);
 
   const stockMap = useMemo(() => {
     const map = new Map<string, { name: string; sectors: string[] }>();
@@ -203,14 +201,6 @@ export default function WatchlistPage() {
       });
     }
 
-    // Filter by 52w Range Color
-    if (selectedColors.size > 0) {
-      list = list.filter((s) => {
-        const tier = get52wColorTier(s);
-        return selectedColors.has(tier.key);
-      });
-    }
-
     // Sort
     return list.sort((a, b) => {
       if (sortKey === "fiftyTwoRange") {
@@ -231,30 +221,7 @@ export default function WatchlistPage() {
       const res = av > bv ? 1 : -1;
       return sortOrder === "asc" ? res : -res;
     });
-  }, [quotes, search, sortKey, sortOrder, stockMap, selectedSectors, selectedColors]);
-
-  const colorGroups = useMemo(() => {
-    if (!groupByColor) return null;
-
-    const map = new Map<ColorTierKey, StockQuote[]>();
-    const tierOrder = sortOrder === "asc" 
-      ? COLOR_TIER_KEYS 
-      : [...COLOR_TIER_KEYS].reverse();
-
-    tierOrder.forEach(key => map.set(key, []));
-
-    sorted.forEach(q => {
-      const tier = get52wColorTier(q);
-      map.get(tier.key)?.push(q);
-    });
-
-    return Array.from(map.entries())
-      .map(([key, items]) => ({
-        tier: COLOR_TIERS[key],
-        items,
-      }))
-      .filter(g => g.items.length > 0);
-  }, [sorted, groupByColor, sortOrder]);
+  }, [quotes, search, sortKey, sortOrder, stockMap, selectedSectors]);
 
   const hasCustom = useMemo(() => {
     const raw = localStorage.getItem("custom-stocks");
@@ -263,14 +230,12 @@ export default function WatchlistPage() {
   }, []);
 
   const downloadCSV = () => {
-    const headers = ["Symbol", "Name", "52W Range Color Tier", "Price", "Change %", "Div Yield %", "Market Cap", "P/E Ratio", "P/B Ratio", "Float Cap"];
+    const headers = ["Symbol", "Name", "Price", "Change %", "Div Yield %", "Market Cap", "P/E Ratio", "P/B Ratio", "Float Cap"];
     const rows = sorted.map(q => {
       const info = stockMap.get(q.symbol.toUpperCase());
-      const tier = get52wColorTier(q);
       return [
         q.symbol,
         `"${info?.name || "Stock"}"`,
-        `"${tier.label}"`,
         q.price.toFixed(2),
         q.changePct.toFixed(2),
         q.dividendYieldPct || 0,
@@ -291,16 +256,6 @@ export default function WatchlistPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const toggleColorFilter = (key: ColorTierKey) => {
-    const next = new Set(selectedColors);
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-    setSelectedColors(next);
   };
 
   const handleSort = (key: keyof StockQuote | "fiftyTwoRange") => {
@@ -388,14 +343,6 @@ export default function WatchlistPage() {
           </Link>
         </div>
         <div className="watchlist-actions">
-          <button 
-            className={`group-color-btn ${groupByColor ? "active" : ""}`}
-            onClick={() => setGroupByColor(!groupByColor)}
-            title="Group watchlist items by 52-week High/Low range color coding"
-          >
-            <Layers size={16} />
-            <span>{groupByColor ? "GROUPED BY 52W COLOR" : "GROUP BY 52W COLOR"}</span>
-          </button>
           <div className="watchlist-search">
             <Search size={16} className="muted" />
             <input
@@ -412,45 +359,11 @@ export default function WatchlistPage() {
         </div>
       </header>
 
-      <div className="filter-controls-container">
-        <SectorFilter 
-          active={selectedSectors} 
-          onChange={setSelectedSectors} 
-          hasCustom={hasCustom}
-        />
-
-        <div className="color-filter-bar">
-          <div className="color-filter-label">
-            <Palette size={13} />
-            <span>52W COLOR RANGE:</span>
-          </div>
-          <button
-            className={`color-chip ${selectedColors.size === 0 ? "active" : ""}`}
-            onClick={() => setSelectedColors(new Set())}
-          >
-            ALL
-          </button>
-          {COLOR_TIER_KEYS.map((key) => {
-            const tier = COLOR_TIERS[key];
-            const active = selectedColors.has(key);
-            return (
-              <button
-                key={key}
-                className={`color-chip ${active ? "active" : ""}`}
-                style={{
-                  borderColor: active ? tier.color : undefined,
-                  color: active ? tier.color : undefined,
-                  backgroundColor: active ? tier.bg : undefined,
-                }}
-                onClick={() => toggleColorFilter(key)}
-              >
-                <span className="color-chip-dot" style={{ backgroundColor: tier.color }} />
-                {tier.shortLabel}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <SectorFilter 
+        active={selectedSectors} 
+        onChange={setSelectedSectors} 
+        hasCustom={hasCustom}
+      />
 
       <div className="table-container">
         {loading && quotes.length === 0 ? (
@@ -543,35 +456,7 @@ export default function WatchlistPage() {
               </tr>
             </thead>
             <tbody>
-              {groupByColor && colorGroups ? (
-                colorGroups.map((group) => {
-                  const avgFrac = group.items.reduce((sum, item) => sum + (get52wRangeFrac(item) ?? 0.5), 0) / group.items.length;
-                  return (
-                    <tr key={group.tier.key} className="color-group-section">
-                      <td colSpan={12} className="color-group-header-td">
-                        <div className="color-group-header">
-                          <span 
-                            className="color-tier-badge group-header-badge" 
-                            style={{ backgroundColor: group.tier.bg, color: group.tier.color, borderColor: group.tier.border }}
-                          >
-                            <span className="color-tier-dot" style={{ backgroundColor: group.tier.color }} />
-                            {group.tier.label}
-                          </span>
-                          <span className="color-group-meta">
-                            <span>{group.items.length} STOCKS</span>
-                            <span className="v-divider mini" />
-                            <span>AVG 52W RANGE: {(avgFrac * 100).toFixed(0)}%</span>
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  ).concat(
-                    group.items.map(renderRow) as any
-                  );
-                })
-              ) : (
-                sorted.map(renderRow)
-              )}
+              {sorted.map(renderRow)}
             </tbody>
           </table>
         )}
